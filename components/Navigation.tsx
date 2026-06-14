@@ -17,9 +17,15 @@ export default function Navigation({ scrolled, mobileMenuOpen, setMobileMenuOpen
           </div>
           
           <div className={`hidden md:flex gap-8 font-medium ${scrolled ? 'text-stone-600' : 'text-white/90'}`}>
+            {/*noinspection HtmlUnknownAnchorTarget*/}
             <a href="#home" className="hover:text-emerald-500 transition">Kezdőlap</a>
-            <a href="#rooms" className="hover:text-emerald-500 transition">Szobák</a>
+            {/*noinspection HtmlUnknownAnchorTarget*/}
             <a href="#services" className="hover:text-emerald-500 transition">Élmények</a>
+            {/*noinspection HtmlUnknownAnchorTarget*/}
+            <a href="#gallery" className="hover:text-emerald-500 transition">Galéria</a>
+            {/*noinspection HtmlUnknownAnchorTarget*/}
+            <a href="#rooms" className="hover:text-emerald-500 transition">Szobák</a>
+            {/*noinspection HtmlUnknownAnchorTarget*/}
             <a href="#booking" className="hover:text-emerald-500 transition">Ajánlatkérés</a>
           </div>
 
@@ -51,8 +57,10 @@ export default function Navigation({ scrolled, mobileMenuOpen, setMobileMenuOpen
       {mobileMenuOpen && (
         <div className="fixed inset-0 bg-white z-40 flex flex-col items-center justify-center gap-8 text-xl animate-fade-in text-emerald-900 font-serif">
            <a href="#home" onClick={() => setMobileMenuOpen(false)}>Kezdőlap</a>
+           <a href="#services" onClick={() => setMobileMenuOpen(false)}>Élmények</a>
+           <a href="#gallery" onClick={() => setMobileMenuOpen(false)}>Galéria</a>
            <a href="#rooms" onClick={() => setMobileMenuOpen(false)}>Szobák</a>
-           <a href="#services" onClick={() => setMobileMenuOpen(false)}>Szolgáltatások</a>
+           <a href="#booking" onClick={() => setMobileMenuOpen(false)}>Ajánlatkérés</a>
            <button className="text-stone-400 font-sans text-base" onClick={() => setMobileMenuOpen(false)}>Bezárás</button>
         </div>
       )}
