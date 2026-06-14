@@ -34,9 +34,11 @@ export default function Hero({ offsetY }: HeroProps) {
           Ébredjen madárcsicsergésre 8 hektáros birtokunkon, közvetlenül az erdő és a halastavak ölelésében.
         </p>
         <div className="flex flex-col md:flex-row gap-4 justify-center animate-slide-up" style={{animationDelay: '0.3s'}}>
+          {/*noinspection HtmlUnknownAnchorTarget*/}
           <a href="#booking" className="bg-emerald-700 hover:bg-emerald-600 text-white px-8 py-4 rounded-full font-medium transition-all transform hover:scale-105 flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20">
             <Calendar size={18} /> Ajánlatkérés
           </a>
+          {/*noinspection HtmlUnknownAnchorTarget*/}
           <a href="#services" className="bg-white/10 backdrop-blur-md hover:bg-white/20 text-white border border-white/30 px-8 py-4 rounded-full font-medium transition-all flex items-center justify-center gap-2">
             Szolgáltatásaink
           </a>
