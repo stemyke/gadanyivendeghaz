@@ -34,7 +34,7 @@ export default function ClientPage({ galleryImages }: ClientPageProps) {
       <Hero offsetY={offsetY} />
       <Introduction />
       <Features />
-      <Gallery images={galleryImages} maxImages={8} />
+      <Gallery images={galleryImages} />
       <RoomsSection />
       <BookingSection />
       <Footer />
