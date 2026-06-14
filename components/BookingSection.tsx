@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { Check, ArrowRight } from 'lucide-react';
 import Calendar from './Calendar'; // Feltételezve, hogy a Calendar komponens külön fájlban van
 
@@ -27,7 +28,12 @@ export default function BookingSection() {
   return (
     <section id="booking" className="py-24 bg-white relative overflow-hidden">
       <div className="absolute inset-0">
-         <img src="https://i.szalas.hu/hotels/742565/original/20802920.webp" className="w-full h-full object-cover opacity-10 blur-sm scale-110" alt="" />
+         <Image 
+            src="/images/booking-bg.webp" 
+            alt=""
+            fill
+            className="object-cover opacity-10 blur-sm scale-110" 
+          />
          <div className="absolute inset-0 bg-white/60"></div>
       </div>
       

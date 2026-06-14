@@ -1,6 +1,7 @@
 import React from 'react';
+import Image from 'next/image';
 import { Users, Check } from 'lucide-react';
-import { Rooms } from '../data/rooms';
+import { Rooms } from '@/data/rooms';
 
 export default function RoomsSection() {
   return (
@@ -27,7 +28,13 @@ export default function RoomsSection() {
           {Rooms.map(room => (
             <div key={room.id} className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 group border border-stone-100/50">
               <div className="relative h-48 overflow-hidden">
-                <img src={room.image} alt={room.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                <Image 
+                  src={room.image} 
+                  alt={room.name} 
+                  fill
+                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 25vw"
+                  className="object-cover group-hover:scale-110 transition-transform duration-700" 
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60"></div>
                 <div className="absolute bottom-3 left-3 text-white">
                    <span className="bg-emerald-600 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Szoba</span>

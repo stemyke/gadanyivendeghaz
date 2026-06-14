@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { Calendar, ChevronDown } from 'lucide-react';
 
 interface HeroProps {
@@ -9,11 +10,13 @@ export default function Hero({ offsetY }: HeroProps) {
   return (
     <header id="home" className="relative h-screen flex items-center justify-center overflow-hidden group">
       <div className="absolute inset-0 overflow-hidden bg-stone-900">
-        <img 
-          src="https://i.szalas.hu/hotels/742565/original/20802917.webp" 
-          className="w-full h-full object-cover opacity-80 animate-ken-burns"
-          style={{ transform: `scale(1.1) translateY(${offsetY * 0.5}px)` }}
+        <Image 
+          src="/images/hero-bg.webp" 
           alt="Gadányi Vendégház és Lovarda"
+          fill
+          priority
+          className="object-cover opacity-80 animate-ken-burns"
+          style={{ transform: `scale(1.1) translateY(${offsetY * 0.5}px)` }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-black/60"></div>
       </div>
