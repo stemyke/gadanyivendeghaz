@@ -6,7 +6,7 @@ import Calendar from './Calendar'; // Feltételezve, hogy a Calendar komponens k
 export default function BookingSection() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
-  const [guests, setGuests] = useState(2);
+  // const [guests, setGuests] = useState(2);
   const [bookingStep, setBookingStep] = useState(1);
 
   const handleDateSelect = (date: Date) => {
@@ -20,10 +20,10 @@ export default function BookingSection() {
     }
   };
 
-  const nights = selectedDate && endDate ? Math.round((endDate.getTime() - selectedDate.getTime()) / (1000 * 60 * 60 * 24)) : 0;
-  const accommodationFee = nights * guests * 7500;
-  const ifa = nights * guests * 500;
-  const total = accommodationFee + ifa;
+  // const nights = selectedDate && endDate ? Math.round((endDate.getTime() - selectedDate.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+  // const accommodationFee = nights * guests * 7500;
+  // const ifa = nights * guests * 500;
+  // const total = accommodationFee + ifa;
 
   return (
     <section id="booking" className="py-24 bg-white relative overflow-hidden">
@@ -44,7 +44,8 @@ export default function BookingSection() {
             <span className="text-emerald-600 font-bold tracking-wider uppercase text-sm">Kapcsolatfelvétel</span>
             <h2 className="text-4xl md:text-5xl font-serif font-bold text-stone-900 mt-3 mb-6">Várjuk szeretettel Komlón!</h2>
             <p className="text-stone-600 mb-8 text-lg leading-relaxed font-medium">
-              Kérjen ajánlatot közvetlenül tőlünk! Garantáljuk a legjobb árat és a személyes odafigyelést. 
+              Foglalással kapcsolatban kérjük, keressen minket a fenti telefonszámok egyikén, vagy küldjön emailt az info@gadanyilovarda.hu címre.
+              Garantáljuk a legjobb árat és a személyes odafigyelést. 
               Csoportoknak és vadászoknak egyedi ajánlatot biztosítunk.
             </p>
             
@@ -67,6 +68,19 @@ export default function BookingSection() {
           </div>
 
           <div className="bg-white rounded-3xl shadow-2xl p-8 border border-stone-100 relative">
+            <div className="text-center py-10">
+                <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-600">
+                  <Check size={32} />
+                </div>
+                <h3 className="text-xl font-bold text-stone-800 mb-2">Online foglalás hamarosan!</h3>
+                <p className="text-stone-500 text-sm">
+                    Az online naptár és ajánlatkérő rendszerünk jelenleg fejlesztés alatt áll. 
+                    Addig is kérjük, használja telefonos vagy emailes elérhetőségeinket.
+                </p>
+            </div>
+
+            {/* Ideiglenesen kikommentelt űrlap és naptár */}
+            {/*
             {bookingStep === 1 && (
               <div className="animate-fade-in">
                 <h3 className="text-xl font-bold mb-4 text-stone-800">Mikor érkezne?</h3>
@@ -183,6 +197,7 @@ export default function BookingSection() {
                 </button>
               </div>
             )}
+            */}
           </div>
         </div>
       </div>
