@@ -1,13 +1,26 @@
-import React, { useState } from 'react';
+'use client';
+
+import React, { useState, useTransition } from 'react';
 import Image from 'next/image';
-import { Check, ArrowRight } from 'lucide-react';
-import Calendar from './Calendar'; // Feltételezve, hogy a Calendar komponens külön fájlban van
+import { Check, ArrowRight, Loader, AlertTriangle } from 'lucide-react';
+import Calendar from './Calendar';
+import { sendBookingRequest } from '../app/actions/sendBookingRequest';
 
 export default function BookingSection() {
+  // Dátum és vendég állapotok
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
-  // const [guests, setGuests] = useState(2);
+  const [guests, setGuests] = useState(2);
+
+  // Form input állapotok
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+
+  // UI állapotok
   const [bookingStep, setBookingStep] = useState(1);
+  const [isPending, startTransition] = useTransition();
+  const [submissionStatus, setSubmissionStatus] = useState<'success' | 'error' | null>(null);
 
   const handleDateSelect = (date: Date) => {
     if (!selectedDate || (selectedDate && endDate)) {
@@ -20,10 +33,50 @@ export default function BookingSection() {
     }
   };
 
-  // const nights = selectedDate && endDate ? Math.round((endDate.getTime() - selectedDate.getTime()) / (1000 * 60 * 60 * 24)) : 0;
-  // const accommodationFee = nights * guests * 7500;
-  // const ifa = nights * guests * 500;
-  // const total = accommodationFee + ifa;
+  const handleSubmit = () => {
+    if (!selectedDate || !endDate || !firstName || !lastName || !email) {
+      alert('Kérjük, töltsön ki minden mezőt!');
+      return;
+    }
+
+    startTransition(async () => {
+      const nights = Math.round((endDate.getTime() - selectedDate.getTime()) / (1000 * 60 * 60 * 24));
+      const total = (nights * guests * 7500) + (nights * guests * 500);
+
+      const result = await sendBookingRequest({
+        name: `${lastName} ${firstName}`,
+        email,
+        guests,
+        startDate: selectedDate.toLocaleDateString('hu-HU'),
+        endDate: endDate.toLocaleDateString('hu-HU'),
+        nights,
+        totalPrice: `${total.toLocaleString()} Ft`,
+      });
+
+      if (result.success) {
+        setSubmissionStatus('success');
+      } else {
+        setSubmissionStatus('error');
+      }
+      setBookingStep(3);
+    });
+  };
+
+  const resetForm = () => {
+    setSelectedDate(null);
+    setEndDate(null);
+    setGuests(2);
+    setFirstName('');
+    setLastName('');
+    setEmail('');
+    setSubmissionStatus(null);
+    setBookingStep(1);
+  };
+
+  const nights = selectedDate && endDate ? Math.round((endDate.getTime() - selectedDate.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+  const accommodationFee = nights * guests * 7500;
+  const ifa = nights * guests * 500;
+  const total = accommodationFee + ifa;
 
   return (
     <section id="booking" className="py-24 bg-white relative overflow-hidden">
@@ -44,8 +97,7 @@ export default function BookingSection() {
             <span className="text-emerald-600 font-bold tracking-wider uppercase text-sm">Kapcsolatfelvétel</span>
             <h2 className="text-4xl md:text-5xl font-serif font-bold text-stone-900 mt-3 mb-6">Várjuk szeretettel Komlón!</h2>
             <p className="text-stone-600 mb-8 text-lg leading-relaxed font-medium">
-              Foglalással kapcsolatban kérjük, keressen minket a fenti telefonszámok egyikén, vagy küldjön emailt az info@gadanyilovarda.hu címre.
-              Garantáljuk a legjobb árat és a személyes odafigyelést. 
+              Kérjen ajánlatot közvetlenül tőlünk! Garantáljuk a legjobb árat és a személyes odafigyelést. 
               Csoportoknak és vadászoknak egyedi ajánlatot biztosítunk.
             </p>
             
@@ -67,20 +119,7 @@ export default function BookingSection() {
             </div>
           </div>
 
-          <div className="bg-white rounded-3xl shadow-2xl p-8 border border-stone-100 relative">
-            <div className="text-center py-10">
-                <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-600">
-                  <Check size={32} />
-                </div>
-                <h3 className="text-xl font-bold text-stone-800 mb-2">Online foglalás hamarosan!</h3>
-                <p className="text-stone-500 text-sm">
-                    Az online naptár és ajánlatkérő rendszerünk jelenleg fejlesztés alatt áll. 
-                    Addig is kérjük, használja telefonos vagy emailes elérhetőségeinket.
-                </p>
-            </div>
-
-            {/* Ideiglenesen kikommentelt űrlap és naptár */}
-            {/*
+          <div className="bg-white rounded-3xl shadow-2xl p-8 border border-stone-100 relative min-h-[500px]">
             {bookingStep === 1 && (
               <div className="animate-fade-in">
                 <h3 className="text-xl font-bold mb-4 text-stone-800">Mikor érkezne?</h3>
@@ -113,91 +152,84 @@ export default function BookingSection() {
             )}
 
             {bookingStep === 2 && (
-              <div className="animate-fade-in">
-                <button onClick={() => setBookingStep(1)} className="text-sm text-stone-400 hover:text-stone-800 mb-4 flex items-center gap-1">← Vissza a naptárhoz</button>
+              <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="animate-fade-in">
+                <button type="button" onClick={() => setBookingStep(1)} className="text-sm text-stone-400 hover:text-stone-800 mb-4 flex items-center gap-1">← Vissza a naptárhoz</button>
                 <h3 className="text-2xl font-serif font-bold mb-6 text-emerald-900">Ajánlatkérés</h3>
                 
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-stone-600 mb-1">Vendégek száma</label>
                     <div className="flex items-center gap-4 bg-stone-50 p-3 rounded-xl border border-stone-200">
-                      <button onClick={() => setGuests(Math.max(1, guests - 1))} className="w-8 h-8 rounded-full bg-white shadow flex items-center justify-center text-emerald-700 hover:bg-emerald-50">-</button>
+                      <button type="button" onClick={() => setGuests(Math.max(1, guests - 1))} className="w-8 h-8 rounded-full bg-white shadow flex items-center justify-center text-emerald-700 hover:bg-emerald-50">-</button>
                       <span className="font-bold w-6 text-center">{guests}</span>
-                      <button onClick={() => setGuests(Math.min(15, guests + 1))} className="w-8 h-8 rounded-full bg-white shadow flex items-center justify-center text-emerald-700 hover:bg-emerald-50">+</button>
+                      <button type="button" onClick={() => setGuests(Math.min(15, guests + 1))} className="w-8 h-8 rounded-full bg-white shadow flex items-center justify-center text-emerald-700 hover:bg-emerald-50">+</button>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-stone-600 mb-1">Vezetéknév</label>
-                      <input type="text" className="w-full p-3 bg-stone-50 rounded-xl border border-stone-200 focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition outline-none" placeholder="Kovács" />
+                      <label htmlFor="lastName" className="block text-sm font-medium text-stone-600 mb-1">Vezetéknév</label>
+                      <input id="lastName" type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} required className="w-full p-3 bg-stone-50 rounded-xl border border-stone-200 focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition outline-none" placeholder="Kovács" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-stone-600 mb-1">Keresztnév</label>
-                      <input type="text" className="w-full p-3 bg-stone-50 rounded-xl border border-stone-200 focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition outline-none" placeholder="Anna" />
+                      <label htmlFor="firstName" className="block text-sm font-medium text-stone-600 mb-1">Keresztnév</label>
+                      <input id="firstName" type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} required className="w-full p-3 bg-stone-50 rounded-xl border border-stone-200 focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition outline-none" placeholder="Anna" />
                     </div>
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-stone-600 mb-1">Email cím</label>
-                    <input type="email" className="w-full p-3 bg-stone-50 rounded-xl border border-stone-200 focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition outline-none" placeholder="anna@example.com" />
+                    <label htmlFor="email" className="block text-sm font-medium text-stone-600 mb-1">Email cím</label>
+                    <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full p-3 bg-stone-50 rounded-xl border border-stone-200 focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition outline-none" placeholder="anna@example.com" />
                   </div>
 
                   <div className="bg-emerald-50 p-5 rounded-xl mt-4 border border-emerald-100">
                     <h4 className="font-bold text-emerald-900 mb-3 border-b border-emerald-200 pb-2">Kalkulált ár</h4>
-                    
-                    <div className="flex justify-between text-sm mb-2 text-stone-600">
-                      <span>Időtartam:</span>
-                      <span className="font-bold text-emerald-900">{nights} éjszaka</span>
-                    </div>
-                    
-                    <div className="flex justify-between text-sm mb-2 text-stone-600">
-                      <span>Vendégek száma:</span>
-                      <span className="font-bold text-emerald-900">{guests} fő</span>
-                    </div>
-
-                    <div className="flex justify-between text-sm mb-2 text-stone-600">
-                      <span>Szállásdíj (7.500 Ft/fő/éj):</span>
-                      <span className="font-bold text-emerald-900">{accommodationFee.toLocaleString()} Ft</span>
-                    </div>
-
-                    <div className="flex justify-between text-sm mb-4 text-stone-600 border-b border-emerald-200 pb-3">
-                      <span>IFA (500 Ft/fő/éj):</span>
-                      <span className="font-bold text-emerald-900">{ifa.toLocaleString()} Ft</span>
-                    </div>
-
-                    <div className="flex justify-between text-lg font-bold text-emerald-900">
-                      <span>Összesen:</span>
-                      <span>{total.toLocaleString()} Ft</span>
-                    </div>
+                    <div className="flex justify-between text-sm mb-2 text-stone-600"><span>Időtartam:</span><span className="font-bold text-emerald-900">{nights} éjszaka</span></div>
+                    <div className="flex justify-between text-sm mb-2 text-stone-600"><span>Vendégek száma:</span><span className="font-bold text-emerald-900">{guests} fő</span></div>
+                    <div className="flex justify-between text-sm mb-2 text-stone-600"><span>Szállásdíj (7.500 Ft/fő/éj):</span><span className="font-bold text-emerald-900">{accommodationFee.toLocaleString()} Ft</span></div>
+                    <div className="flex justify-between text-sm mb-4 text-stone-600 border-b border-emerald-200 pb-3"><span>IFA (500 Ft/fő/éj):</span><span className="font-bold text-emerald-900">{ifa.toLocaleString()} Ft</span></div>
+                    <div className="flex justify-between text-lg font-bold text-emerald-900"><span>Összesen:</span><span>{total.toLocaleString()} Ft</span></div>
                   </div>
 
                   <button 
-                    onClick={() => setBookingStep(3)}
-                    className="w-full bg-stone-900 text-white py-4 rounded-xl font-bold text-lg hover:bg-emerald-800 transition-all mt-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                    type="submit"
+                    disabled={isPending}
+                    className="w-full bg-stone-900 text-white py-4 rounded-xl font-bold text-lg hover:bg-emerald-800 transition-all mt-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:bg-stone-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    Ajánlatkérés elküldése
+                    {isPending ? <><Loader className="animate-spin" size={20} /> Küldés...</> : 'Ajánlatkérés elküldése'}
                   </button>
                 </div>
-              </div>
+              </form>
             )}
 
             {bookingStep === 3 && (
               <div className="text-center py-10 animate-fade-in">
-                <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6 text-emerald-600 shadow-inner">
-                  <Check size={48} />
-                </div>
-                <h3 className="text-2xl font-serif font-bold mb-2 text-emerald-900">Köszönjük megkeresését!</h3>
-                <p className="text-stone-500 mb-8 max-w-xs mx-auto">Hamarosan felvesszük Önnel a kapcsolatot a megadott elérhetőségeken.</p>
+                {submissionStatus === 'success' && (
+                  <>
+                    <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6 text-emerald-600 shadow-inner">
+                      <Check size={48} />
+                    </div>
+                    <h3 className="text-2xl font-serif font-bold mb-2 text-emerald-900">Köszönjük megkeresését!</h3>
+                    <p className="text-stone-500 mb-8 max-w-xs mx-auto">Hamarosan felvesszük Önnel a kapcsolatot a megadott elérhetőségeken.</p>
+                  </>
+                )}
+                {submissionStatus === 'error' && (
+                  <>
+                    <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6 text-red-600 shadow-inner">
+                      <AlertTriangle size={48} />
+                    </div>
+                    <h3 className="text-2xl font-serif font-bold mb-2 text-red-900">Hiba történt!</h3>
+                    <p className="text-stone-500 mb-8 max-w-xs mx-auto">Az ajánlatkérés elküldése sikertelen. Kérjük, próbálja újra később, vagy vegye fel velünk a kapcsolatot telefonon.</p>
+                  </>
+                )}
                 <button 
-                  onClick={() => {setBookingStep(1); setSelectedDate(null); setEndDate(null);}}
+                  onClick={resetForm}
                   className="text-emerald-700 font-bold hover:text-emerald-900 hover:underline transition-all"
                 >
                   Új ajánlatkérés indítása
                 </button>
               </div>
             )}
-            */}
           </div>
         </div>
       </div>

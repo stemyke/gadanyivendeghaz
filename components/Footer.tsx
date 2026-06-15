@@ -1,6 +1,6 @@
 import React from 'react';
 import { MapPin, Phone, Mail } from 'lucide-react';
-import { FaInstagram, FaFacebook } from 'react-icons/fa';
+import { FaFacebook } from 'react-icons/fa';
 
 export default function Footer() {
   return (
@@ -32,7 +32,7 @@ export default function Footer() {
             </li>
             <li className="flex items-center gap-3">
                <Mail size={16} className="text-emerald-500 flex-shrink-0" /> 
-               <a href="mailto:info@gadanyilovarda.hu" className="hover:text-emerald-400 transition-colors">info@gadanyilovarda.hu</a>
+               <a href="mailto:info@gadanyivendeghaz.hu" className="hover:text-emerald-400 transition-colors">info@gadanyivendeghaz.hu</a>
             </li>
           </ul>
         </div>
@@ -50,10 +50,12 @@ export default function Footer() {
         <div>
           <h4 className="font-bold mb-6 text-lg text-emerald-50">Közösség</h4>
           <div className="flex gap-4">
+            {/*
             <a href="#" className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-emerald-600 transition-colors group">
               <FaInstagram size={20} className="group-hover:scale-110 transition-transform"/>
             </a>
-            <a href="#" className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors group">
+            */}
+            <a href="https://www.facebook.com/gadanyivendeghazeslovarda/?locale=hu_HU" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors group">
               <FaFacebook size={20} className="group-hover:scale-110 transition-transform"/>
             </a>
           </div>
