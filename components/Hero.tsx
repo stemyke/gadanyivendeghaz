@@ -1,12 +1,20 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Calendar, ChevronDown } from 'lucide-react';
 
-interface HeroProps {
-  offsetY: number;
-}
+export default function Hero() {
+  const [offsetY, setOffsetY] = useState(0);
 
-export default function Hero({ offsetY }: HeroProps) {
+  useEffect(() => {
+    const handleScroll = () => {
+      setOffsetY(window.scrollY);
+    };
+    handleScroll();
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
   return (
     <header id="home" className="relative h-screen flex items-center justify-center overflow-hidden group">
       <div className="absolute inset-0 overflow-hidden bg-stone-900">

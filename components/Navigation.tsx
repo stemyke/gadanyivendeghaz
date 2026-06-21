@@ -1,13 +1,29 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
 
-interface NavigationProps {
-  scrolled: boolean;
-  mobileMenuOpen: boolean;
-  setMobileMenuOpen: (open: boolean) => void;
-}
+export default function Navigation() {
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-export default function Navigation({ scrolled, mobileMenuOpen, setMobileMenuOpen }: NavigationProps) {
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+    };
+    
+    // Futás azonnal mount-kor az induló scrollhelyzet (pl. hash linkek) észleléséhez
+    handleScroll();
+    
+    // Késleltetett futtatás a böngésző aszinkron hash-re ugrásának lefedéséhez
+    const timer = setTimeout(handleScroll, 100);
+
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
   return (
     <>
       <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${scrolled ? 'bg-white/90 backdrop-blur-md shadow-sm py-4' : 'bg-transparent py-6'}`}>
