@@ -73,40 +73,45 @@ export default function Calendar({ selectedDate, endDate, onDateClick, occupiedD
     // 2. Already occupied days
     if (isOccupiedDate(checkDate)) return true;
 
-    // 3. Selection constraints for check-out
-    if (selectedDate && !endDate) {
-      const checkDateTime = checkDate.getTime();
-      const selectedDateTime = selectedDate.getTime();
+    return false;
+  };
 
-      // Check-out cannot be before or equal to check-in
-      if (checkDateTime <= selectedDateTime) return true;
+  const isValidCheckoutDate = (day: number) => {
+    if (!selectedDate || endDate) return true;
 
-      // Find the first booking start date after selectedDate
-      let nextBookingStart: number | null = null;
-      if (occupiedDates) {
-        for (const range of occupiedDates) {
-          const start = new Date(range.startDate);
-          start.setHours(0, 0, 0, 0);
-          const startTime = start.getTime();
+    const checkDate = new Date(currentYear, currentMonth, day);
+    checkDate.setHours(0, 0, 0, 0);
+    const checkDateTime = checkDate.getTime();
+    const selectedDateTime = selectedDate.getTime();
 
-          if (startTime > selectedDateTime) {
-            if (nextBookingStart === null || startTime < nextBookingStart) {
-              nextBookingStart = startTime;
-            }
+    // Check-out cannot be before or equal to check-in
+    if (checkDateTime <= selectedDateTime) return false;
+
+    // Find the first booking start date after selectedDate
+    let nextBookingStart: number | null = null;
+    if (occupiedDates) {
+      for (const range of occupiedDates) {
+        const start = new Date(range.startDate);
+        start.setHours(0, 0, 0, 0);
+        const startTime = start.getTime();
+
+        if (startTime > selectedDateTime) {
+          if (nextBookingStart === null || startTime < nextBookingStart) {
+            nextBookingStart = startTime;
           }
-        }
-      }
-
-      if (nextBookingStart !== null) {
-        const toleranceOffset = tolerance * 24 * 60 * 60 * 1000;
-        const checkOutLimit = nextBookingStart - toleranceOffset;
-        if (checkDateTime > checkOutLimit) {
-          return true;
         }
       }
     }
 
-    return false;
+    if (nextBookingStart !== null) {
+      const toleranceOffset = tolerance * 24 * 60 * 60 * 1000;
+      const checkOutLimit = nextBookingStart - toleranceOffset;
+      if (checkDateTime > checkOutLimit) {
+        return false;
+      }
+    }
+
+    return true;
   };
 
   const handleDateClick = (day: number) => {
@@ -177,6 +182,7 @@ export default function Calendar({ selectedDate, endDate, onDateClick, occupiedD
         {blanks.map((_, i) => <div key={`blank-${i}`} className="h-10"></div>)}
         {days.map(day => {
           const disabled = isPastOrOccupied(day);
+          const validCheckout = isValidCheckoutDate(day);
           return (
             <button
               key={day}
@@ -188,6 +194,8 @@ export default function Calendar({ selectedDate, endDate, onDateClick, occupiedD
                   ? 'text-stone-300 cursor-not-allowed bg-transparent'
                   : isSelected(day) 
                   ? 'bg-emerald-800 text-white shadow-lg scale-105 font-semibold' 
+                  : selectedDate && !endDate && !validCheckout
+                  ? 'text-stone-400 hover:bg-emerald-50 hover:text-emerald-800'
                   : 'hover:bg-emerald-50 text-stone-600 hover:text-emerald-800'
                 }
               `}

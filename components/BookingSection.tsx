@@ -59,9 +59,36 @@ export default function BookingSection({ tolerance = 0 }: { tolerance?: number }
       setSelectedDate(date);
       setEndDate(null);
     } else if (date > selectedDate) {
-      setEndDate(date);
+      // Check if there is an occupied range in between
+      let hasOverlap = false;
+      if (occupiedDates) {
+        const startCompare = selectedDate.getTime();
+        const endCompare = date.getTime();
+        const toleranceOffset = tolerance * 24 * 60 * 60 * 1000;
+
+        for (const range of occupiedDates) {
+          const oStart = new Date(range.startDate);
+          oStart.setHours(0, 0, 0, 0);
+          const oStartTime = oStart.getTime();
+
+          // If there is a booking start date between check-in and checkout (minus tolerance)
+          if (oStartTime > startCompare && endCompare > (oStartTime - toleranceOffset)) {
+            hasOverlap = true;
+            break;
+          }
+        }
+      }
+
+      if (hasOverlap) {
+        // If it overlaps, make the clicked date the new check-in date
+        setSelectedDate(date);
+        setEndDate(null);
+      } else {
+        setEndDate(date);
+      }
     } else {
       setSelectedDate(date);
+      setEndDate(null);
     }
   };
 

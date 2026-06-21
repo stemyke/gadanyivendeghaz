@@ -28,6 +28,95 @@ export async function getBookedDates(roomId: number) {
   }
 }
 
+// Helper function to save a booking request into the database
+async function saveBookingToDb(data: {
+  roomId: number;
+  startDate: Date;
+  endDate: Date;
+  name: string;
+  email: string;
+  guests: number;
+  totalPrice: string;
+}) {
+  return await prisma.booking.create({
+    data: {
+      roomId: data.roomId,
+      startDate: data.startDate,
+      endDate: data.endDate,
+      name: data.name,
+      email: data.email,
+      guests: data.guests,
+      totalPrice: data.totalPrice,
+      status: 'pending'
+    }
+  });
+}
+
+// Helper function to send email notification to admin via SMTP
+async function sendBookingEmail(data: {
+  name: string;
+  email: string;
+  roomName: string;
+  startDate: Date;
+  endDate: Date;
+  guests: number;
+  nights: number;
+  totalPrice: string;
+}) {
+  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_EMAIL_TO } = process.env;
+
+  if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASS || !SMTP_EMAIL_TO) {
+    console.error('Hiányzó SMTP konfiguráció a .env fájlban.');
+    return false;
+  }
+
+  const transporter = createTransport({
+    host: SMTP_HOST,
+    port: Number(SMTP_PORT),
+    secure: Number(SMTP_PORT) === 465,
+    auth: {
+      user: SMTP_USER,
+      pass: SMTP_PASS,
+    },
+    tls: {
+      rejectUnauthorized: false,
+    },
+  });
+
+  const mailOptions = {
+    from: `"Gadányi Vendégház Weboldal" <${SMTP_USER}>`,
+    to: SMTP_EMAIL_TO,
+    replyTo: data.email,
+    subject: `Új ajánlatkérés érkezett - ${data.name}`,
+    html: `
+      <div style="font-family: sans-serif; line-height: 1.6;">
+        <h2 style="color: #1e3a8a;">Új ajánlatkérés érkezett a weboldalról</h2>
+        <p>A következő adatokkal küldtek ajánlatkérést:</p>
+        <ul style="list-style-type: none; padding: 0;">
+          <li><strong>Név:</strong> ${data.name}</li>
+          <li><strong>Email:</strong> <a href="mailto:${data.email}">${data.email}</a></li>
+          <li><strong>Szoba:</strong> ${data.roomName}</li>
+        </ul>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+        <h3 style="color: #1e3a8a;">Foglalás részletei</h3>
+        <ul style="list-style-type: none; padding: 0;">
+          <li><strong>Érkezés:</strong> ${data.startDate.toLocaleDateString('hu-HU')}</li>
+          <li><strong>Távozás:</strong> ${data.endDate.toLocaleDateString('hu-HU')}</li>
+          <li><strong>Éjszakák száma:</strong> ${data.nights}</li>
+          <li><strong>Vendégek száma:</strong> ${data.guests} fő</li>
+          <li style="margin-top: 10px;"><strong>Kalkulált végösszeg:</strong> <strong style="font-size: 1.1em;">${data.totalPrice}</strong></li>
+        </ul>
+        <p style="margin-top: 25px; font-size: 0.9em; color: #555;">
+          Ez egy automatikusan generált e-mail. Kérjük, kezeld a foglalást az admin felületen.
+        </p>
+      </div>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
+  return true;
+}
+
 export async function createBooking(data: {
   roomId: number;
   startDate: string; // ISO String
@@ -77,73 +166,35 @@ export async function createBooking(data: {
   const roomName = Rooms.find(r => r.id === data.roomId)?.name || `${data.roomId}. szoba`;
 
   try {
-    await prisma.booking.create({
-      data: {
-        roomId: data.roomId,
-        startDate: start,
-        endDate: end,
-        name: `${data.lastName} ${data.firstName}`,
-        email: data.email,
-        guests: data.guests,
-        totalPrice,
-        status: 'pending'
-      }
+    // 1. Save booking request into DB (status: pending)
+    await saveBookingToDb({
+      roomId: data.roomId,
+      startDate: start,
+      endDate: end,
+      name: `${data.lastName} ${data.firstName}`,
+      email: data.email,
+      guests: data.guests,
+      totalPrice
     });
 
-    // SMTP Send
-    const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_EMAIL_TO } = process.env;
-
-    if (SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS && SMTP_EMAIL_TO) {
-      const transporter = createTransport({
-        host: SMTP_HOST,
-        port: Number(SMTP_PORT),
-        secure: Number(SMTP_PORT) === 465,
-        auth: {
-          user: SMTP_USER,
-          pass: SMTP_PASS,
-        },
-        tls: {
-          rejectUnauthorized: false,
-        },
-      });
-
-      const mailOptions = {
-        from: `"Gadányi Vendégház Weboldal" <${SMTP_USER}>`,
-        to: SMTP_EMAIL_TO,
-        replyTo: data.email,
-        subject: `Új ajánlatkérés érkezett - ${data.lastName} ${data.firstName}`,
-        html: `
-          <div style="font-family: sans-serif; line-height: 1.6;">
-            <h2 style="color: #1e3a8a;">Új ajánlatkérés érkezett a weboldalról</h2>
-            <p>A következő adatokkal küldtek ajánlatkérést:</p>
-            <ul style="list-style-type: none; padding: 0;">
-              <li><strong>Név:</strong> ${data.lastName} ${data.firstName}</li>
-              <li><strong>Email:</strong> <a href="mailto:${data.email}">${data.email}</a></li>
-              <li><strong>Szoba:</strong> ${roomName}</li>
-            </ul>
-            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-            <h3 style="color: #1e3a8a;">Foglalás részletei</h3>
-            <ul style="list-style-type: none; padding: 0;">
-              <li><strong>Érkezés:</strong> ${start.toLocaleDateString('hu-HU')}</li>
-              <li><strong>Távozás:</strong> ${end.toLocaleDateString('hu-HU')}</li>
-              <li><strong>Éjszakák száma:</strong> ${nights}</li>
-              <li><strong>Vendégek száma:</strong> ${data.guests} fő</li>
-              <li style="margin-top: 10px;"><strong>Kalkulált végösszeg:</strong> <strong style="font-size: 1.1em;">${totalPrice}</strong></li>
-            </ul>
-            <p style="margin-top: 25px; font-size: 0.9em; color: #555;">
-              Ez egy automatikusan generált e-mail. Kérjük, kezeld a foglalást az admin felületen.
-            </p>
-          </div>
-        `,
-      };
-
-      await transporter.sendMail(mailOptions);
-    }
+    // 2. Send email notification (currently commented out)
+    /*
+    await sendBookingEmail({
+      name: `${data.lastName} ${data.firstName}`,
+      email: data.email,
+      roomName,
+      startDate: start,
+      endDate: end,
+      guests: data.guests,
+      nights,
+      totalPrice
+    });
+    */
 
     return { success: true };
   } catch (error) {
-    console.error('Error creating booking/sending email:', error);
-    return { success: false, error: 'Hiba történt a foglalási kérés feldolgozásakor.' };
+    console.error('Error creating booking:', error);
+    return { success: false, error: 'Hiba történt a foglalási kérés feldoűlgozásakor.' };
   }
 }
 
@@ -241,9 +292,9 @@ export async function updateBooking(
       const overlapEnd = end.getTime() > eStart.getTime();
 
       if (overlapStart && overlapEnd) {
-        return { 
-          success: false, 
-          error: `Ütközés egy másik elfogadott foglalással! (${existing.name}: ${existing.startDate.toLocaleDateString('hu-HU')} - ${existing.endDate.toLocaleDateString('hu-HU')})` 
+        return {
+          success: false,
+          error: `Ütközés egy másik elfogadott foglalással! (${existing.name}: ${existing.startDate.toLocaleDateString('hu-HU')} - ${existing.endDate.toLocaleDateString('hu-HU')})`
         };
       }
     }
