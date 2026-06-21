@@ -8,9 +8,11 @@ interface CalendarProps {
   selectedDate: Date | null;
   endDate: Date | null;
   onDateClick: (date: Date) => void;
+  occupiedDates?: { startDate: string; endDate: string }[];
+  tolerance?: number;
 }
 
-export default function Calendar({ selectedDate, endDate, onDateClick }: CalendarProps) {
+export default function Calendar({ selectedDate, endDate, onDateClick, occupiedDates, tolerance = 0 }: CalendarProps) {
   const [currentMonth, setCurrentMonth] = useState<number | null>(null);
   const [currentYear, setCurrentYear] = useState<number | null>(null);
 
@@ -42,43 +44,110 @@ export default function Calendar({ selectedDate, endDate, onDateClick }: Calenda
 
   const isCurrentMonthView = currentYear === today.getFullYear() && currentMonth === today.getMonth();
 
+  const isOccupiedDate = (checkDate: Date) => {
+    if (!occupiedDates) return false;
+    const checkTime = checkDate.getTime();
+    const toleranceOffset = tolerance * 24 * 60 * 60 * 1000;
+
+    for (const range of occupiedDates) {
+      const start = new Date(range.startDate);
+      const end = new Date(range.endDate);
+      start.setHours(0, 0, 0, 0);
+      end.setHours(0, 0, 0, 0);
+
+      // Bloat interval is [start, end + tolerance - 1 day]
+      if (checkTime >= start.getTime() && checkTime < (end.getTime() + toleranceOffset)) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const isPastOrOccupied = (day: number) => {
+    const checkDate = new Date(currentYear, currentMonth, day);
+    checkDate.setHours(0, 0, 0, 0);
+
+    // 1. Past days
+    if (checkDate < today) return true;
+
+    // 2. Already occupied days
+    if (isOccupiedDate(checkDate)) return true;
+
+    // 3. Selection constraints for check-out
+    if (selectedDate && !endDate) {
+      const checkDateTime = checkDate.getTime();
+      const selectedDateTime = selectedDate.getTime();
+
+      // Check-out cannot be before or equal to check-in
+      if (checkDateTime <= selectedDateTime) return true;
+
+      // Find the first booking start date after selectedDate
+      let nextBookingStart: number | null = null;
+      if (occupiedDates) {
+        for (const range of occupiedDates) {
+          const start = new Date(range.startDate);
+          start.setHours(0, 0, 0, 0);
+          const startTime = start.getTime();
+
+          if (startTime > selectedDateTime) {
+            if (nextBookingStart === null || startTime < nextBookingStart) {
+              nextBookingStart = startTime;
+            }
+          }
+        }
+      }
+
+      if (nextBookingStart !== null) {
+        const toleranceOffset = tolerance * 24 * 60 * 60 * 1000;
+        const checkOutLimit = nextBookingStart - toleranceOffset;
+        if (checkDateTime > checkOutLimit) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  };
+
   const handleDateClick = (day: number) => {
     const clickedDate = new Date(currentYear, currentMonth, day);
-    if (clickedDate < today) return;
+    if (isPastOrOccupied(day)) return;
     onDateClick(clickedDate);
   };
 
   const isSelected = (day: number) => {
     if (!selectedDate) return false;
     const current = new Date(currentYear, currentMonth, day);
-    if (endDate) {
-      return current >= selectedDate && current <= endDate;
-    }
-    return current.getTime() === selectedDate.getTime();
-  };
+    current.setHours(0, 0, 0, 0);
+    
+    const startCompare = new Date(selectedDate);
+    startCompare.setHours(0, 0, 0, 0);
 
-  const isPastDay = (day: number) => {
-      const checkDate = new Date(currentYear, currentMonth, day);
-      return checkDate < today;
+    if (endDate) {
+      const endCompare = new Date(endDate);
+      endCompare.setHours(0, 0, 0, 0);
+      return current >= startCompare && current <= endCompare;
+    }
+    return current.getTime() === startCompare.getTime();
   };
 
   const handlePrevMonth = () => {
-      if (isCurrentMonthView) return;
-      if (currentMonth === 0) {
-          setCurrentMonth(11);
-          setCurrentYear(prev => prev! - 1);
-      } else {
-          setCurrentMonth(prev => prev! - 1);
-      }
+    if (isCurrentMonthView) return;
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(prev => prev! - 1);
+    } else {
+      setCurrentMonth(prev => prev! - 1);
+    }
   };
 
   const handleNextMonth = () => {
-      if (currentMonth === 11) {
-          setCurrentMonth(0);
-          setCurrentYear(prev => prev! + 1);
-      } else {
-          setCurrentMonth(prev => prev! + 1);
-      }
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(prev => prev! + 1);
+    } else {
+      setCurrentMonth(prev => prev! + 1);
+    }
   };
 
   return (
@@ -107,24 +176,24 @@ export default function Calendar({ selectedDate, endDate, onDateClick }: Calenda
       <div className="grid grid-cols-7 gap-2">
         {blanks.map((_, i) => <div key={`blank-${i}`} className="h-10"></div>)}
         {days.map(day => {
-          const disabled = isPastDay(day);
+          const disabled = isPastOrOccupied(day);
           return (
-              <button
+            <button
               key={day}
               onClick={() => handleDateClick(day)}
               disabled={disabled}
               className={`
-                  h-10 w-10 rounded-full flex items-center justify-center text-sm transition-all duration-300
-                  ${disabled 
-                      ? 'text-stone-300 cursor-not-allowed bg-transparent'
-                      : isSelected(day) 
-                      ? 'bg-emerald-800 text-white shadow-lg scale-105' 
-                      : 'hover:bg-emerald-50 text-stone-600 hover:text-emerald-800'
-                  }
+                h-10 w-10 rounded-full flex items-center justify-center text-sm transition-all duration-300 cursor-pointer
+                ${disabled 
+                  ? 'text-stone-300 cursor-not-allowed bg-transparent'
+                  : isSelected(day) 
+                  ? 'bg-emerald-800 text-white shadow-lg scale-105 font-semibold' 
+                  : 'hover:bg-emerald-50 text-stone-600 hover:text-emerald-800'
+                }
               `}
-              >
+            >
               {day}
-              </button>
+            </button>
           );
         })}
       </div>

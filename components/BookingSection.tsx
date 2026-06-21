@@ -2,25 +2,57 @@
 
 import React, { useState, useTransition } from 'react';
 import Image from 'next/image';
-import { Check, ArrowRight, Loader, AlertTriangle } from 'lucide-react';
+import { Check, ArrowRight, Loader, AlertTriangle, ShieldCheck } from 'lucide-react';
 import Calendar from './Calendar';
-import { sendBookingRequest } from '../app/actions/sendBookingRequest';
+import { createBooking, getBookedDates } from '../app/actions/bookings';
+import { Rooms } from '../data/rooms';
 
-export default function BookingSection() {
-  // Dátum és vendég állapotok
+export default function BookingSection({ tolerance = 0 }: { tolerance?: number }) {
+  // Room, date, and guest states
+  const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
+  const [occupiedDates, setOccupiedDates] = useState<{ startDate: string; endDate: string }[]>([]);
+  const [loadingDates, setLoadingDates] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [guests, setGuests] = useState(2);
 
-  // Form input állapotok
+  // Form input states
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
 
-  // UI állapotok
+  // UI states
   const [bookingStep, setBookingStep] = useState(1);
   const [isPending, startTransition] = useTransition();
   const [submissionStatus, setSubmissionStatus] = useState<'success' | 'error' | null>(null);
+
+  const handleRoomSelect = async (roomId: number) => {
+    setSelectedRoomId(roomId);
+    const room = Rooms.find(r => r.id === roomId);
+    if (room && guests > room.capacity) {
+      setGuests(room.capacity);
+    }
+    
+    setLoadingDates(true);
+    try {
+      const dates = await getBookedDates(roomId);
+      setOccupiedDates(dates);
+      setBookingStep(2);
+    } catch (error) {
+      console.error('Failed to load room dates:', error);
+      alert('Hiba történt a szoba foglalt dátumainak betöltésekor. Kérjük, próbálja újra!');
+    } finally {
+      setLoadingDates(false);
+    }
+  };
+
+  const handleBackToRooms = () => {
+    setSelectedRoomId(null);
+    setOccupiedDates([]);
+    setSelectedDate(null);
+    setEndDate(null);
+    setBookingStep(1);
+  };
 
   const handleDateSelect = (date: Date) => {
     if (!selectedDate || (selectedDate && endDate)) {
@@ -34,23 +66,20 @@ export default function BookingSection() {
   };
 
   const handleSubmit = () => {
-    if (!selectedDate || !endDate || !firstName || !lastName || !email) {
+    if (!selectedRoomId || !selectedDate || !endDate || !firstName || !lastName || !email) {
       alert('Kérjük, töltsön ki minden mezőt!');
       return;
     }
 
     startTransition(async () => {
-      const nights = Math.round((endDate.getTime() - selectedDate.getTime()) / (1000 * 60 * 60 * 24));
-      const total = (nights * guests * 7500) + (nights * guests * 500);
-
-      const result = await sendBookingRequest({
-        name: `${lastName} ${firstName}`,
-        email,
+      const result = await createBooking({
+        roomId: selectedRoomId,
+        startDate: selectedDate.toISOString(),
+        endDate: endDate.toISOString(),
         guests,
-        startDate: selectedDate.toLocaleDateString('hu-HU'),
-        endDate: endDate.toLocaleDateString('hu-HU'),
-        nights,
-        totalPrice: `${total.toLocaleString()} Ft`,
+        lastName,
+        firstName,
+        email,
       });
 
       if (result.success) {
@@ -58,11 +87,13 @@ export default function BookingSection() {
       } else {
         setSubmissionStatus('error');
       }
-      setBookingStep(3);
+      setBookingStep(4);
     });
   };
 
   const resetForm = () => {
+    setSelectedRoomId(null);
+    setOccupiedDates([]);
     setSelectedDate(null);
     setEndDate(null);
     setGuests(2);
@@ -72,6 +103,9 @@ export default function BookingSection() {
     setSubmissionStatus(null);
     setBookingStep(1);
   };
+
+  const selectedRoom = Rooms.find(r => r.id === selectedRoomId);
+  const maxGuests = selectedRoom ? selectedRoom.capacity : 15;
 
   const nights = selectedDate && endDate ? Math.round((endDate.getTime() - selectedDate.getTime()) / (1000 * 60 * 60 * 24)) : 0;
   const accommodationFee = nights * guests * 7500;
@@ -119,18 +153,68 @@ export default function BookingSection() {
             </div>
           </div>
 
-          <div className="bg-white rounded-3xl shadow-2xl p-8 border border-stone-100 relative min-h-[500px]">
+          <div className="bg-white rounded-3xl shadow-2xl p-8 border border-stone-100 relative min-h-[500px] flex flex-col justify-center">
+            
+            {loadingDates && (
+              <div className="absolute inset-0 bg-white/80 backdrop-blur-sm rounded-3xl flex flex-col items-center justify-center z-20">
+                <Loader className="animate-spin text-emerald-700 mb-2" size={32} />
+                <span className="text-sm font-semibold text-stone-600">Dátumok betöltése...</span>
+              </div>
+            )}
+
             {bookingStep === 1 && (
+              <div className="animate-fade-in space-y-4">
+                <h3 className="text-xl font-bold mb-4 text-stone-800 flex items-center gap-2">
+                  <ShieldCheck className="text-emerald-700" size={20} />
+                  Melyik szobát választja?
+                </h3>
+                <div className="space-y-3">
+                  {Rooms.map(room => (
+                    <button
+                      key={room.id}
+                      onClick={() => handleRoomSelect(room.id)}
+                      className="w-full text-left p-4 bg-stone-50 hover:bg-emerald-50/40 rounded-2xl border border-stone-200 hover:border-emerald-300 transition-all flex items-center gap-4 cursor-pointer group"
+                    >
+                      <div className="relative w-16 h-16 rounded-xl overflow-hidden shrink-0 bg-stone-200">
+                        <img src={room.image} alt={room.name} className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-bold text-stone-800 group-hover:text-emerald-950 transition-colors">{room.name}</h4>
+                        <p className="text-xs text-stone-500 mt-1">Kapacitás: legfeljebb {room.capacity} fő</p>
+                      </div>
+                      <div className="text-stone-300 group-hover:text-emerald-700 transition-colors text-lg font-bold">
+                        →
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {bookingStep === 2 && (
               <div className="animate-fade-in">
+                <div className="flex justify-between items-center mb-4 pb-2 border-b border-stone-100">
+                  <span className="text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full uppercase tracking-wider">
+                    {selectedRoom?.name}
+                  </span>
+                  <button 
+                    onClick={handleBackToRooms} 
+                    className="text-xs text-stone-400 hover:text-stone-700 underline cursor-pointer"
+                  >
+                    Szoba módosítása
+                  </button>
+                </div>
                 <h3 className="text-xl font-bold mb-4 text-stone-800">Mikor érkezne?</h3>
                 <Calendar 
                   selectedDate={selectedDate}
                   endDate={endDate}
                   onDateClick={handleDateSelect}
+                  occupiedDates={occupiedDates}
+                  tolerance={tolerance}
                 />
                 <div className="mt-6 pt-4 border-t border-stone-100">
                     <div className="flex justify-between items-center">
-                        <div className="text-sm text-stone-500">
+                        <div className="text-sm text-stone-500 font-medium">
                         {selectedDate ? (
                             <span>
                             {selectedDate.toLocaleDateString('hu-HU')} 
@@ -140,8 +224,8 @@ export default function BookingSection() {
                         </div>
                         {selectedDate && endDate && (
                         <button 
-                            onClick={() => setBookingStep(2)}
-                            className="bg-emerald-900 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-950 transition-colors flex items-center gap-2"
+                            onClick={() => setBookingStep(3)}
+                            className="bg-emerald-900 text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-emerald-950 transition-colors flex items-center gap-2 cursor-pointer shadow-md hover:shadow-lg"
                         >
                             Tovább <ArrowRight size={14} />
                         </button>
@@ -151,35 +235,43 @@ export default function BookingSection() {
               </div>
             )}
 
-            {bookingStep === 2 && (
+            {bookingStep === 3 && (
               <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="animate-fade-in">
-                <button type="button" onClick={() => setBookingStep(1)} className="text-sm text-stone-400 hover:text-stone-800 mb-4 flex items-center gap-1">← Vissza a naptárhoz</button>
+                <button type="button" onClick={() => setBookingStep(2)} className="text-sm text-stone-400 hover:text-stone-800 mb-4 flex items-center gap-1 cursor-pointer">← Vissza a naptárhoz</button>
+                <div className="flex justify-between items-center mb-4 pb-2 border-b border-stone-100">
+                  <span className="text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full uppercase tracking-wider">
+                    {selectedRoom?.name}
+                  </span>
+                  <span className="text-xs text-stone-500 font-medium">
+                    {selectedDate?.toLocaleDateString('hu-HU')} - {endDate?.toLocaleDateString('hu-HU')}
+                  </span>
+                </div>
                 <h3 className="text-2xl font-serif font-bold mb-6 text-emerald-900">Ajánlatkérés</h3>
                 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-stone-600 mb-1">Vendégek száma</label>
+                    <label className="block text-sm font-medium text-stone-600 mb-1">Vendégek száma (Max: {maxGuests} fő)</label>
                     <div className="flex items-center gap-4 bg-stone-50 p-3 rounded-xl border border-stone-200">
-                      <button type="button" onClick={() => setGuests(Math.max(1, guests - 1))} className="w-8 h-8 rounded-full bg-white shadow flex items-center justify-center text-emerald-700 hover:bg-emerald-50">-</button>
+                      <button type="button" onClick={() => setGuests(Math.max(1, guests - 1))} className="w-8 h-8 rounded-full bg-white shadow flex items-center justify-center text-emerald-700 hover:bg-emerald-50 font-bold cursor-pointer">-</button>
                       <span className="font-bold w-6 text-center">{guests}</span>
-                      <button type="button" onClick={() => setGuests(Math.min(15, guests + 1))} className="w-8 h-8 rounded-full bg-white shadow flex items-center justify-center text-emerald-700 hover:bg-emerald-50">+</button>
+                      <button type="button" onClick={() => setGuests(Math.min(maxGuests, guests + 1))} className="w-8 h-8 rounded-full bg-white shadow flex items-center justify-center text-emerald-700 hover:bg-emerald-50 font-bold cursor-pointer">+</button>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label htmlFor="lastName" className="block text-sm font-medium text-stone-600 mb-1">Vezetéknév</label>
-                      <input id="lastName" type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} required className="w-full p-3 bg-stone-50 rounded-xl border border-stone-200 focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition outline-none" placeholder="Kovács" />
+                      <input id="lastName" type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} required className="w-full p-3 bg-stone-50 rounded-xl border border-stone-200 focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition outline-none text-stone-800" placeholder="Kovács" />
                     </div>
                     <div>
                       <label htmlFor="firstName" className="block text-sm font-medium text-stone-600 mb-1">Keresztnév</label>
-                      <input id="firstName" type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} required className="w-full p-3 bg-stone-50 rounded-xl border border-stone-200 focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition outline-none" placeholder="Anna" />
+                      <input id="firstName" type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} required className="w-full p-3 bg-stone-50 rounded-xl border border-stone-200 focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition outline-none text-stone-800" placeholder="Anna" />
                     </div>
                   </div>
                   
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-stone-600 mb-1">Email cím</label>
-                    <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full p-3 bg-stone-50 rounded-xl border border-stone-200 focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition outline-none" placeholder="anna@example.com" />
+                    <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full p-3 bg-stone-50 rounded-xl border border-stone-200 focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition outline-none text-stone-800" placeholder="anna@example.com" />
                   </div>
 
                   <div className="bg-emerald-50 p-5 rounded-xl mt-4 border border-emerald-100">
@@ -194,7 +286,7 @@ export default function BookingSection() {
                   <button 
                     type="submit"
                     disabled={isPending}
-                    className="w-full bg-stone-900 text-white py-4 rounded-xl font-bold text-lg hover:bg-emerald-800 transition-all mt-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:bg-stone-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full bg-stone-900 text-white py-4 rounded-xl font-bold text-lg hover:bg-emerald-800 transition-all mt-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:bg-stone-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
                   >
                     {isPending ? <><Loader className="animate-spin" size={20} /> Küldés...</> : 'Ajánlatkérés elküldése'}
                   </button>
@@ -202,7 +294,7 @@ export default function BookingSection() {
               </form>
             )}
 
-            {bookingStep === 3 && (
+            {bookingStep === 4 && (
               <div className="text-center py-10 animate-fade-in">
                 {submissionStatus === 'success' && (
                   <>
@@ -224,7 +316,7 @@ export default function BookingSection() {
                 )}
                 <button 
                   onClick={resetForm}
-                  className="text-emerald-700 font-bold hover:text-emerald-900 hover:underline transition-all"
+                  className="text-emerald-700 font-bold hover:text-emerald-900 hover:underline transition-all cursor-pointer"
                 >
                   Új ajánlatkérés indítása
                 </button>

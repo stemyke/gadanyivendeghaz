@@ -11,6 +11,7 @@ import Footer from '../components/Footer';
 
 export default async function Home() {
   const images = await getGalleryImages();
+  const tolerance = Number(process.env.BOOKING_TOLERANCE || 0);
 
   return (
     <div className="font-sans text-stone-800 bg-stone-50 min-h-screen selection:bg-emerald-200">
@@ -20,7 +21,7 @@ export default async function Home() {
       <Features />
       <Gallery images={images} />
       <RoomsSection />
-      <BookingSection />
+      <BookingSection tolerance={tolerance} />
       <Footer />
     </div>
   );

@@ -21,13 +21,13 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-stone-100 flex flex-col md:flex-row text-stone-800">
+    <div className="min-h-screen md:h-screen md:overflow-hidden bg-stone-100 flex flex-col md:flex-row text-stone-800">
       <AdminSidebar role={role} />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col min-h-screen md:min-h-0 md:h-screen md:overflow-hidden">
         {/* Top header (Desktop only) */}
-        <header className="hidden md:flex items-center justify-between h-20 bg-white border-b border-stone-200 px-8 shadow-sm">
+        <header className="hidden md:flex items-center justify-between h-20 bg-white border-b border-stone-200 px-8 shadow-sm shrink-0">
           <h1 className="text-xl font-semibold text-stone-800">
             Adminisztráció
           </h1>
