@@ -24,8 +24,18 @@ export default function ClientPage({ galleryImages }: ClientPageProps) {
       setScrolled(window.scrollY > 50);
       setOffsetY(window.scrollY);
     };
+    
+    // Futás azonnal mount-kor az induló scrollhelyzet (pl. hash linkek) észleléséhez
+    handleScroll();
+    
+    // Késleltetett futtatás a böngésző aszinkron hash-re ugrásának lefedéséhez
+    const timer = setTimeout(handleScroll, 100);
+
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, []);
 
   return (
