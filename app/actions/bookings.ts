@@ -10,7 +10,7 @@ export async function getBookedDates(roomId: number) {
     const bookings = await prisma.booking.findMany({
       where: {
         roomId,
-        status: 'accepted',
+        status: { in: ['accepted', 'closed'] },
       },
       select: {
         startDate: true,
@@ -271,13 +271,13 @@ export async function updateBooking(
   const ifa = nights * guestsNum * 500;
   const newTotalPrice = `${(accommodationFee + ifa).toLocaleString()} Ft`;
 
-  if (newStatus === 'accepted') {
-    // Check overlaps with other accepted bookings
+  if (newStatus === 'accepted' || newStatus === 'closed') {
+    // Check overlaps with other accepted bookings or room closures
     const tolerance = Number(process.env.BOOKING_TOLERANCE || 0);
     const existingBookings = await prisma.booking.findMany({
       where: {
         roomId: booking.roomId,
-        status: 'accepted',
+        status: { in: ['accepted', 'closed'] },
         id: { not: bookingId }
       }
     });
@@ -294,7 +294,7 @@ export async function updateBooking(
       if (overlapStart && overlapEnd) {
         return {
           success: false,
-          error: `Ütközés egy másik elfogadott foglalással! (${existing.name}: ${existing.startDate.toLocaleDateString('hu-HU')} - ${existing.endDate.toLocaleDateString('hu-HU')})`
+          error: `Ütközés egy másik elfogadott foglalással vagy lezárással! (${existing.name}: ${existing.startDate.toLocaleDateString('hu-HU')} - ${existing.endDate.toLocaleDateString('hu-HU')})`
         };
       }
     }
@@ -309,8 +309,8 @@ export async function updateBooking(
       totalPrice: newTotalPrice,
     };
 
-    if (newStatus === 'accepted') {
-      updateData.acceptedAt = new Date();
+    if (newStatus === 'accepted' || newStatus === 'closed') {
+      updateData.acceptedAt = booking.acceptedAt || new Date();
     } else {
       updateData.acceptedAt = null;
     }
@@ -341,5 +341,214 @@ export async function deleteBooking(bookingId: number) {
   } catch (error) {
     console.error('Failed to delete booking:', error);
     return { success: false, error: 'Nem sikerült törölni a foglalást.' };
+  }
+}
+
+export async function getDashboardData() {
+  const { isAuthenticated } = await checkAuth();
+  if (!isAuthenticated) {
+    throw new Error('Not authenticated');
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  try {
+    // 1. Active bookings count (accepted, starting today or later)
+    const activeCount = await prisma.booking.count({
+      where: {
+        status: 'accepted',
+        startDate: {
+          gte: today,
+        },
+      },
+    });
+
+    // 2. Pending bookings count (pending, starting today or later)
+    const pendingCount = await prisma.booking.count({
+      where: {
+        status: 'pending',
+        startDate: {
+          gte: today,
+        },
+      },
+    });
+
+    // 3. Recent activities: fetch last 20 bookings modified
+    const recentBookings = await prisma.booking.findMany({
+      orderBy: {
+        updatedAt: 'desc',
+      },
+      take: 20,
+    });
+
+    const allActivities: any[] = [];
+
+    recentBookings.forEach(b => {
+      const start = new Date(b.startDate);
+      const end = new Date(b.endDate);
+      const formattedCheckIn = start.toLocaleDateString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit' });
+      const formattedCheckOut = end.toLocaleDateString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit' });
+      const nights = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+      
+      const room = Rooms.find(r => r.id === b.roomId);
+      const roomName = room ? room.name : `${b.roomId}. szoba`;
+      const description = `${b.name} - ${roomName}, ${b.guests} fő, ${nights} éj (${formattedCheckIn} - ${formattedCheckOut})`;
+
+      // 1. Create activity (always exists)
+      allActivities.push({
+        id: `${b.id}-create`,
+        title: 'Új ajánlatkérés érkezett',
+        description,
+        timestamp: new Date(b.createdAt),
+        status: 'new',
+      });
+
+      // 2. Action activity (if accepted or rejected)
+      if (b.status === 'accepted') {
+        allActivities.push({
+          id: `${b.id}-accept`,
+          title: 'Foglalás visszaigazolva',
+          description,
+          timestamp: new Date(b.acceptedAt || b.updatedAt),
+          status: 'completed',
+        });
+      } else if (b.status === 'rejected') {
+        allActivities.push({
+          id: `${b.id}-reject`,
+          title: 'Ajánlatkérés elutasítva',
+          description,
+          timestamp: new Date(b.updatedAt),
+          status: 'rejected',
+        });
+      }
+    });
+
+    // Sort combined activities by timestamp descending
+    allActivities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+    // Format top 5 relative time
+    const recentActivities = allActivities.slice(0, 5).map(act => {
+      let time = '';
+      const timeDiff = new Date().getTime() - act.timestamp.getTime();
+      const hoursDiff = Math.floor(timeDiff / (1000 * 60 * 60));
+      const minsDiff = Math.floor(timeDiff / (1000 * 60));
+      if (minsDiff < 60) {
+        time = minsDiff <= 0 ? 'most' : `${minsDiff} perce`;
+      } else if (hoursDiff < 24) {
+        time = `${hoursDiff} órája`;
+      } else {
+        const daysDiff = Math.floor(hoursDiff / 24);
+        time = `${daysDiff} napja`;
+      }
+
+      return {
+        id: act.id,
+        title: act.title,
+        description: act.description,
+        time,
+        status: act.status,
+      };
+    });
+
+    return {
+      activeCount,
+      pendingCount,
+      recentActivities,
+    };
+  } catch (error) {
+    console.error('Failed to get dashboard data:', error);
+    return {
+      activeCount: 0,
+      pendingCount: 0,
+      recentActivities: [],
+    };
+  }
+}
+
+export async function createAdminBooking(data: {
+  roomId: number;
+  startDate: string;
+  endDate: string;
+  status: 'closed' | 'accepted';
+  name?: string;
+  email?: string;
+  guests?: number;
+}) {
+  const { isAuthenticated } = await checkAuth();
+  if (!isAuthenticated) {
+    return { success: false, error: 'Ehhez a művelethez be kell jelentkezni!' };
+  }
+
+  const start = new Date(data.startDate);
+  const end = new Date(data.endDate);
+  start.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+
+  if (start >= end) {
+    return { success: false, error: 'A távozás dátumának későbbinek kell lennie az érkezésnél!' };
+  }
+
+  // Check overlaps
+  const tolerance = Number(process.env.BOOKING_TOLERANCE || 0);
+  const existingBookings = await prisma.booking.findMany({
+    where: {
+      roomId: data.roomId,
+      status: { in: ['accepted', 'closed'] },
+    }
+  });
+
+  for (const existing of existingBookings) {
+    const eStart = new Date(existing.startDate);
+    const eEnd = new Date(existing.endDate);
+    eStart.setHours(0, 0, 0, 0);
+    eEnd.setHours(0, 0, 0, 0);
+
+    const overlapStart = start.getTime() < (eEnd.getTime() + tolerance * 24 * 60 * 60 * 1000);
+    const overlapEnd = end.getTime() > eStart.getTime();
+
+    if (overlapStart && overlapEnd) {
+      return {
+        success: false,
+        error: `Ütközés egy meglévő foglalással vagy lezárással! (${existing.name}: ${existing.startDate.toLocaleDateString('hu-HU')} - ${existing.endDate.toLocaleDateString('hu-HU')})`
+      };
+    }
+  }
+
+  try {
+    let name = 'Szoba Zárás';
+    let email = '-';
+    let guests = 0;
+    let totalPrice = '0 Ft';
+
+    if (data.status === 'accepted') {
+      name = data.name || 'Manuális foglalás';
+      email = data.email || '-';
+      guests = data.guests || 1;
+
+      const nights = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+      const accommodationFee = nights * guests * 7500;
+      const ifa = nights * guests * 500;
+      totalPrice = `${(accommodationFee + ifa).toLocaleString()} Ft`;
+    }
+
+    await prisma.booking.create({
+      data: {
+        roomId: data.roomId,
+        startDate: start,
+        endDate: end,
+        name,
+        email,
+        guests,
+        totalPrice,
+        status: data.status,
+        acceptedAt: new Date(),
+      }
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to create admin booking:', error);
+    return { success: false, error: 'Hiba történt a szoba rögzítése során.' };
   }
 }

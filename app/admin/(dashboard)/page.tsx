@@ -6,22 +6,20 @@ import {
   TrendingUp,
   Clock,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  XCircle
 } from 'lucide-react';
 import { checkAuth } from '../../actions/auth';
+import { getDashboardData } from '../../actions/bookings';
 
 export default async function AdminDashboard() {
   const { fullname } = await checkAuth();
-  const stats = [
-    { title: 'Aktív foglalások', value: '12 db', change: '+2 ezen a héten', icon: CalendarCheck, color: 'text-emerald-600 bg-emerald-50 border-emerald-100' },
-    { title: 'Ajánlatkérések', value: '4 db', change: 'Megválaszolásra vár', icon: MessageSquare, color: 'text-amber-600 bg-amber-50 border-amber-100' },
-    { title: 'Havi látogatók', value: '1,240', change: '+12.4% vs előző hónap', icon: Eye, color: 'text-purple-600 bg-purple-50 border-purple-100' },
-  ];
+  const { activeCount, pendingCount, recentActivities } = await getDashboardData();
 
-  const recentActivities = [
-    { id: 1, type: 'booking', title: 'Új ajánlatkérés érkezett', description: 'Kovács János - 4 fő, 3 éjszaka (2026.07.12 - 2026.07.15)', time: '2 órája', status: 'new' },
-    { id: 3, type: 'booking', title: 'Foglalás visszaigazolva', description: 'Nagy Andrea (2026.08.01 - 2026.08.05)', time: '1 napja', status: 'completed' },
-    { id: 4, type: 'system', title: 'Szerver újraindítás', description: 'Automatikus biztonsági frissítés lefutott', time: '2 napja', status: 'info' },
+  const stats = [
+    { title: 'Aktív foglalások', value: `${activeCount} db`, change: 'Aktív és jövőbeli', icon: CalendarCheck, color: 'text-emerald-600 bg-emerald-50 border-emerald-100' },
+    { title: 'Ajánlatkérések', value: `${pendingCount} db`, change: 'Megválaszolásra vár', icon: MessageSquare, color: 'text-amber-600 bg-amber-50 border-amber-100' },
+    { title: 'Havi látogatók', value: '1,240', change: '+12.4% vs előző hónap', icon: Eye, color: 'text-purple-600 bg-purple-50 border-purple-100' },
   ];
 
   return (
@@ -75,42 +73,48 @@ export default async function AdminDashboard() {
         <div className="lg:col-span-2 bg-white rounded-2xl border border-stone-200 shadow-sm p-6 md:p-8 space-y-6">
           <div className="flex justify-between items-center pb-4 border-b border-stone-100">
             <h3 className="text-lg font-semibold text-stone-800">Legutóbbi aktivitások</h3>
-            <button className="text-xs font-medium text-emerald-600 hover:text-emerald-700 hover:underline">Összes megtekintése</button>
+            <a href="/admin/bookings" className="text-xs font-medium text-emerald-600 hover:text-emerald-700 hover:underline">Összes megtekintése</a>
           </div>
 
           <div className="flow-root">
-            <ul className="-mb-8">
-              {recentActivities.map((activity, activityIdx) => (
-                <li key={activity.id}>
-                  <div className="relative pb-8">
-                    {activityIdx !== recentActivities.length - 1 ? (
-                      <span className="absolute top-5 left-5 -ml-px h-full w-0.5 bg-stone-200" aria-hidden="true" />
-                    ) : null}
-                    <div className="relative flex items-start space-x-3">
-                      <div className="relative">
-                        <div className={`
-                          h-10 w-10 rounded-full flex items-center justify-center ring-8 ring-white
-                          ${activity.status === 'new' ? 'bg-amber-100 text-amber-700' : ''}
-                          ${activity.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : ''}
-                          ${activity.status === 'info' ? 'bg-blue-100 text-blue-700' : ''}
-                        `}>
-                          {activity.status === 'new' && <AlertCircle size={18} />}
-                          {activity.status === 'completed' && <CheckCircle2 size={18} />}
-                          {activity.status === 'info' && <Clock size={18} />}
+            {recentActivities.length === 0 ? (
+              <p className="text-sm text-stone-400 py-8 text-center bg-stone-50 rounded-xl border border-dashed border-stone-200">Nincs legutóbbi aktivitás.</p>
+            ) : (
+              <ul className="-mb-8">
+                {recentActivities.map((activity, activityIdx) => (
+                  <li key={activity.id}>
+                    <div className="relative pb-8">
+                      {activityIdx !== recentActivities.length - 1 ? (
+                        <span className="absolute top-5 left-5 -ml-px h-full w-0.5 bg-stone-200" aria-hidden="true" />
+                      ) : null}
+                      <div className="relative flex items-start space-x-3">
+                        <div className="relative">
+                          <div className={`
+                            h-10 w-10 rounded-full flex items-center justify-center ring-8 ring-white
+                            ${activity.status === 'new' ? 'bg-amber-100 text-amber-700' : ''}
+                            ${activity.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : ''}
+                            ${activity.status === 'rejected' ? 'bg-red-100 text-red-700' : ''}
+                            ${activity.status === 'info' ? 'bg-blue-100 text-blue-700' : ''}
+                          `}>
+                            {activity.status === 'new' && <AlertCircle size={18} />}
+                            {activity.status === 'completed' && <CheckCircle2 size={18} />}
+                            {activity.status === 'rejected' && <XCircle size={18} />}
+                            {activity.status === 'info' && <Clock size={18} />}
+                          </div>
                         </div>
-                      </div>
-                      <div className="min-w-0 flex-1 py-1.5">
-                        <div className="text-sm font-medium text-stone-800">
-                          {activity.title}
+                        <div className="min-w-0 flex-1 py-1.5">
+                          <div className="text-sm font-medium text-stone-800">
+                            {activity.title}
+                          </div>
+                          <p className="text-sm text-stone-500 mt-0.5">{activity.description}</p>
+                          <span className="text-xs text-stone-400 mt-1 block">{activity.time}</span>
                         </div>
-                        <p className="text-sm text-stone-500 mt-0.5">{activity.description}</p>
-                        <span className="text-xs text-stone-400 mt-1 block">{activity.time}</span>
                       </div>
                     </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
 

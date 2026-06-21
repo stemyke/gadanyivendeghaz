@@ -134,6 +134,11 @@ export default function BookingRow({ booking }: BookingRowProps) {
               Elutasítva
             </span>
           )}
+          {booking.status === 'closed' && (
+            <span className="inline-flex items-center gap-1 text-xs bg-stone-900 text-white border border-stone-950 px-2.5 py-1 rounded-full font-medium">
+              Szoba lezárva
+            </span>
+          )}
         </td>
         <td className="px-6 py-4 text-right">
           <div className="flex items-center justify-end gap-1.5">
@@ -237,44 +242,53 @@ export default function BookingRow({ booking }: BookingRowProps) {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label htmlFor="editGuests" className="block text-xs font-medium text-stone-500 mb-1">Vendégek (Max: {maxGuests} fő)</label>
-                      <div className="relative">
-                        <input
-                          id="editGuests"
-                          type="number"
-                          required
-                          min={1}
-                          max={maxGuests}
-                          value={editGuests}
-                          onChange={(e) => setEditGuests(Math.max(1, Math.min(maxGuests, Number(e.target.value))))}
-                          className="w-full p-2.5 pl-8 bg-stone-50 rounded-xl border border-stone-200 text-sm focus:border-emerald-500 focus:bg-white outline-none text-stone-800 font-sans"
-                        />
-                        <Users size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400" />
+                  {booking.status !== 'closed' ? (
+                    <>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label htmlFor="editGuests" className="block text-xs font-medium text-stone-500 mb-1">Vendégek (Max: {maxGuests} fő)</label>
+                          <div className="relative">
+                            <input
+                              id="editGuests"
+                              type="number"
+                              required
+                              min={1}
+                              max={maxGuests}
+                              value={editGuests}
+                              onChange={(e) => setEditGuests(Math.max(1, Math.min(maxGuests, Number(e.target.value))))}
+                              className="w-full p-2.5 pl-8 bg-stone-50 rounded-xl border border-stone-200 text-sm focus:border-emerald-500 focus:bg-white outline-none text-stone-800 font-sans"
+                            />
+                            <Users size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400" />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label htmlFor="editStatus" className="block text-xs font-medium text-stone-500 mb-1">Státusz</label>
+                          <select
+                            id="editStatus"
+                            value={editStatus}
+                            onChange={(e) => setEditStatus(e.target.value)}
+                            className="w-full p-2.5 bg-stone-50 rounded-xl border border-stone-200 text-sm focus:border-emerald-500 focus:bg-white outline-none text-stone-800 cursor-pointer font-sans"
+                          >
+                            <option value="pending">Válaszra vár (Pending)</option>
+                            <option value="accepted">Elfogadva (Accepted)</option>
+                            <option value="rejected">Elutasítva (Rejected)</option>
+                          </select>
+                        </div>
                       </div>
-                    </div>
 
-                    <div>
-                      <label htmlFor="editStatus" className="block text-xs font-medium text-stone-500 mb-1">Státusz</label>
-                      <select
-                        id="editStatus"
-                        value={editStatus}
-                        onChange={(e) => setEditStatus(e.target.value)}
-                        className="w-full p-2.5 bg-stone-50 rounded-xl border border-stone-200 text-sm focus:border-emerald-500 focus:bg-white outline-none text-stone-800 cursor-pointer font-sans"
-                      >
-                        <option value="pending">Válaszra vár (Pending)</option>
-                        <option value="accepted">Elfogadva (Accepted)</option>
-                        <option value="rejected">Elutasítva (Rejected)</option>
-                      </select>
+                      {/* Informative calculated pricing info */}
+                      <div className="bg-emerald-50/50 border border-emerald-100 p-3 rounded-xl text-xs space-y-1 text-stone-600">
+                        <div className="flex justify-between"><span>Eltöltött éjszakák száma:</span><span className="font-bold text-emerald-900">{Math.max(0, Math.round((new Date(editEndDate).getTime() - new Date(editStartDate).getTime()) / (1000 * 60 * 60 * 24)))} éj</span></div>
+                        <div className="flex justify-between"><span>Becsült új végösszeg:</span><span className="font-bold text-emerald-900">{((Math.max(0, Math.round((new Date(editEndDate).getTime() - new Date(editStartDate).getTime()) / (1000 * 60 * 60 * 24))) * editGuests * 8000)).toLocaleString()} Ft</span></div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="bg-stone-50 border border-stone-200 p-3.5 rounded-xl text-xs space-y-1 text-stone-600 font-sans">
+                      <div className="flex justify-between"><span>Típus:</span><span className="font-bold text-stone-800">Rendszerszintű szobalezárás</span></div>
+                      <div className="flex justify-between"><span>Státusz:</span><span className="font-bold text-stone-800">Nem módosítható (csak az intervallum)</span></div>
                     </div>
-                  </div>
-
-                  {/* Informative calculated pricing info */}
-                  <div className="bg-emerald-50/50 border border-emerald-100 p-3 rounded-xl text-xs space-y-1 text-stone-600">
-                    <div className="flex justify-between"><span>Eltöltött éjszakák száma:</span><span className="font-bold text-emerald-900">{Math.max(0, Math.round((new Date(editEndDate).getTime() - new Date(editStartDate).getTime()) / (1000 * 60 * 60 * 24)))} éj</span></div>
-                    <div className="flex justify-between"><span>Becsült új végösszeg:</span><span className="font-bold text-emerald-900">{((Math.max(0, Math.round((new Date(editEndDate).getTime() - new Date(editStartDate).getTime()) / (1000 * 60 * 60 * 24))) * editGuests * 8000)).toLocaleString()} Ft</span></div>
-                  </div>
+                  )}
 
                   <div className="flex justify-end gap-2 pt-2">
                     <button
