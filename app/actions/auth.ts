@@ -113,18 +113,18 @@ export async function logout() {
   return { success: true };
 }
 
-export async function checkAuth(): Promise<{ isAuthenticated: boolean; username: string | null; hasAnyUsers: boolean; role: string | null }> {
+export async function checkAuth(): Promise<{ isAuthenticated: boolean; username: string | null; hasAnyUsers: boolean; role: string | null; fullname: string | null }> {
   const hasAnyUsers = await UserModel.hasAnyUsers();
   const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAME)?.value;
   
   if (!token) {
-    return { isAuthenticated: false, username: null, hasAnyUsers, role: null };
+    return { isAuthenticated: false, username: null, hasAnyUsers, role: null, fullname: null };
   }
 
   const username = verifySessionToken(token);
   if (!username) {
-    return { isAuthenticated: false, username: null, hasAnyUsers, role: null };
+    return { isAuthenticated: false, username: null, hasAnyUsers, role: null, fullname: null };
   }
 
   const user = await UserModel.findUserByUsername(username);
@@ -133,6 +133,7 @@ export async function checkAuth(): Promise<{ isAuthenticated: boolean; username:
     username,
     hasAnyUsers,
     role: user?.role || null,
+    fullname: user?.fullname || null,
   };
 }
 

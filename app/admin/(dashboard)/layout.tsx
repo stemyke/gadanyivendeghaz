@@ -36,8 +36,10 @@ export default async function DashboardLayout({
               <User size={18} />
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-medium text-stone-800">Adminisztrátor</span>
-              <span className="text-xs text-stone-400">@{username}</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-700">
+                {role === 'super' ? 'SzuperAdmin' : 'Admin'}
+              </span>
+              <span className="text-sm font-medium text-stone-800">@{username}</span>
             </div>
           </div>
         </header>

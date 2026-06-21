@@ -2,25 +2,24 @@ import React from 'react';
 import { 
   CalendarCheck, 
   MessageSquare, 
-  Image as ImageIcon, 
   Eye,
   TrendingUp,
   Clock,
   CheckCircle2,
   AlertCircle
 } from 'lucide-react';
+import { checkAuth } from '../../actions/auth';
 
-export default function AdminDashboard() {
+export default async function AdminDashboard() {
+  const { fullname } = await checkAuth();
   const stats = [
     { title: 'Aktív foglalások', value: '12 db', change: '+2 ezen a héten', icon: CalendarCheck, color: 'text-emerald-600 bg-emerald-50 border-emerald-100' },
     { title: 'Ajánlatkérések', value: '4 db', change: 'Megválaszolásra vár', icon: MessageSquare, color: 'text-amber-600 bg-amber-50 border-amber-100' },
-    { title: 'Galéria képek', value: '28 db', change: 'Utoljára frissítve: ma', icon: ImageIcon, color: 'text-blue-600 bg-blue-50 border-blue-100' },
     { title: 'Havi látogatók', value: '1,240', change: '+12.4% vs előző hónap', icon: Eye, color: 'text-purple-600 bg-purple-50 border-purple-100' },
   ];
 
   const recentActivities = [
     { id: 1, type: 'booking', title: 'Új ajánlatkérés érkezett', description: 'Kovács János - 4 fő, 3 éjszaka (2026.07.12 - 2026.07.15)', time: '2 órája', status: 'new' },
-    { id: 2, type: 'gallery', title: 'Galéria frissítve', description: '3 új kép lett feltöltve a lovardáról', time: '5 órája', status: 'completed' },
     { id: 3, type: 'booking', title: 'Foglalás visszaigazolva', description: 'Nagy Andrea (2026.08.01 - 2026.08.05)', time: '1 napja', status: 'completed' },
     { id: 4, type: 'system', title: 'Szerver újraindítás', description: 'Automatikus biztonsági frissítés lefutott', time: '2 napja', status: 'info' },
   ];
@@ -36,8 +35,8 @@ export default function AdminDashboard() {
       {/* Greeting Banner */}
       <div className="bg-emerald-950 text-white rounded-2xl p-6 md:p-8 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-xl md:text-2xl font-serif font-semibold">Üdvözöljük, Admin! 👋</h2>
-          <p className="text-emerald-200 text-sm mt-1">Itt kezelheti a vendégház foglalásait, a galériát és az oldal beállításait.</p>
+          <h2 className="text-xl md:text-2xl font-serif font-semibold">Üdvözöljük, {fullname || 'Admin'}! 👋</h2>
+          <p className="text-emerald-200 text-sm mt-1">Itt kezelheti a vendégház foglalásait és az oldal beállításait.</p>
         </div>
         <div className="flex gap-2">
           <span className="text-xs bg-emerald-800/80 text-emerald-100 px-3 py-1.5 rounded-full font-medium flex items-center gap-1.5">
@@ -47,7 +46,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Grid of stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {stats.map((stat, idx) => {
           const Icon = stat.icon;
           return (
@@ -124,10 +123,6 @@ export default function AdminDashboard() {
                 <span>Foglalási naptár ellenőrzése</span>
                 <span className="text-stone-400">→</span>
               </a>
-              <a href="/admin/gallery" className="flex items-center justify-between p-3 rounded-xl hover:bg-stone-50 border border-transparent hover:border-stone-200 text-sm font-medium text-stone-700 transition">
-                <span>Új képek feltöltése</span>
-                <span className="text-stone-400">→</span>
-              </a>
               <a href="/admin/settings" className="flex items-center justify-between p-3 rounded-xl hover:bg-stone-50 border border-transparent hover:border-stone-200 text-sm font-medium text-stone-700 transition">
                 <span>Admin jelszó módosítása</span>
                 <span className="text-stone-400">→</span>
@@ -137,7 +132,7 @@ export default function AdminDashboard() {
 
           <div className="bg-emerald-50/50 rounded-2xl border border-emerald-100 shadow-sm p-6 text-center space-y-3">
             <h4 className="text-sm font-semibold text-emerald-900">Segítségre van szüksége?</h4>
-            <p className="text-xs text-emerald-800/80 leading-relaxed">Ha problémát tapasztal a foglalásokkal vagy a galéria frissítésével kapcsolatban, vegye fel a kapcsolatot a fejlesztővel.</p>
+            <p className="text-xs text-emerald-800/80 leading-relaxed">Ha problémát tapasztal a foglalásokkal kapcsolatban, vegye fel a kapcsolatot a fejlesztővel.</p>
             <a href="mailto:support@example.com" className="inline-block text-xs font-semibold text-emerald-700 hover:text-emerald-800 bg-white border border-emerald-200 px-4 py-2 rounded-xl shadow-sm transition">
               Kapcsolatfelvétel
             </a>

@@ -6,7 +6,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import { 
   LayoutDashboard, 
   CalendarRange, 
-  Image as ImageIcon, 
   Settings, 
   LogOut, 
   Menu, 
@@ -24,17 +23,14 @@ export default function AdminSidebar({ role }: { role: string | null }) {
   const navItems = [
     { name: 'Áttekintés', href: '/admin', icon: LayoutDashboard },
     { name: 'Foglalások', href: '/admin/bookings', icon: CalendarRange },
-    { name: 'Galéria', href: '/admin/gallery', icon: ImageIcon },
     ...(role === 'super' ? [{ name: 'Felhasználók', href: '/admin/users', icon: Users }] : []),
     { name: 'Beállítások', href: '/admin/settings', icon: Settings },
   ];
 
   const handleLogout = async () => {
-    if (confirm('Biztosan ki szeretne jelentkezni?')) {
-      await logout();
-      router.push('/admin/login');
-      router.refresh();
-    }
+    await logout();
+    router.push('/admin/login');
+    router.refresh();
   };
 
   return (
@@ -108,7 +104,7 @@ export default function AdminSidebar({ role }: { role: string | null }) {
           </Link>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-red-950/40 hover:text-red-400 text-stone-300 transition-colors text-left"
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-red-950/40 hover:text-red-400 text-stone-300 transition-colors text-left cursor-pointer"
           >
             <LogOut size={18} />
             Kijelentkezés
