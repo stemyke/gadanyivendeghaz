@@ -1,31 +1,51 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { Calendar, ChevronDown } from 'lucide-react';
 
 export default function Hero() {
-  const [offsetY, setOffsetY] = useState(0);
+  const bgRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    let ticking = false;
+
     const handleScroll = () => {
-      setOffsetY(window.scrollY);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          if (bgRef.current) {
+            // A háttérkép a görgetési sebesség 35%-ával mozog lefelé (parallax)
+            bgRef.current.style.transform = `translateY(${window.scrollY * 0.35}px)`;
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
+
+    // Azonnali beállítás betöltéskor
     handleScroll();
-    window.addEventListener('scroll', handleScroll);
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
   return (
     <header id="home" className="relative h-screen flex items-center justify-center overflow-hidden group">
       <div className="absolute inset-0 overflow-hidden bg-stone-900">
-        <Image 
-          src="/images/hero-bg.webp" 
-          alt="Gadányi Vendégház és Lovarda"
-          fill
-          priority
-          className="object-cover opacity-80 animate-ken-burns"
-          style={{ transform: `scale(1.1) translateY(${offsetY * 0.5}px)` }}
-        />
+        <div 
+          ref={bgRef}
+          className="absolute inset-0 w-full h-full"
+          style={{ willChange: 'transform' }}
+        >
+          <Image 
+            src="/images/hero-bg.webp" 
+            alt="Gadányi Vendégház és Lovarda"
+            fill
+            priority
+            className="object-cover opacity-80 scale-125 origin-center"
+          />
+        </div>
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-black/60"></div>
       </div>
       
