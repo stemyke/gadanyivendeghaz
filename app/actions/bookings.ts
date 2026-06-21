@@ -237,6 +237,8 @@ export async function updateBooking(
     startDate?: string;
     endDate?: string;
     guests?: number;
+    name?: string;
+    email?: string;
   }
 ) {
   const { isAuthenticated } = await checkAuth();
@@ -255,7 +257,6 @@ export async function updateBooking(
   const newStatus = data.status;
   const startStr = data.startDate || booking.startDate.toISOString().split('T')[0];
   const endStr = data.endDate || booking.endDate.toISOString().split('T')[0];
-  const guestsNum = data.guests || booking.guests;
 
   const start = new Date(startStr);
   const end = new Date(endStr);
@@ -266,10 +267,21 @@ export async function updateBooking(
     return { success: false, error: 'A távozás dátumának későbbinek kell lennie az érkezésnél!' };
   }
 
-  const nights = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-  const accommodationFee = nights * guestsNum * 7500;
-  const ifa = nights * guestsNum * 500;
-  const newTotalPrice = `${(accommodationFee + ifa).toLocaleString()} Ft`;
+  let guestsNum = 0;
+  let nameStr = 'Szoba Zárás';
+  let emailStr = '-';
+  let newTotalPrice = '0 Ft';
+
+  if (newStatus !== 'closed') {
+    nameStr = data.name !== undefined ? data.name : (booking.name === 'Szoba Zárás' ? 'Manuális foglalás' : booking.name);
+    emailStr = data.email !== undefined ? data.email : (booking.email === '-' ? '-' : booking.email);
+    guestsNum = data.guests !== undefined ? data.guests : (booking.guests === 0 ? 2 : booking.guests);
+
+    const nights = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    const accommodationFee = nights * guestsNum * 7500;
+    const ifa = nights * guestsNum * 500;
+    newTotalPrice = `${(accommodationFee + ifa).toLocaleString()} Ft`;
+  }
 
   if (newStatus === 'accepted' || newStatus === 'closed') {
     // Check overlaps with other accepted bookings or room closures
@@ -306,6 +318,8 @@ export async function updateBooking(
       startDate: start,
       endDate: end,
       guests: guestsNum,
+      name: nameStr,
+      email: emailStr,
       totalPrice: newTotalPrice,
     };
 
@@ -395,32 +409,42 @@ export async function getDashboardData() {
       const roomName = room ? room.name : `${b.roomId}. szoba`;
       const description = `${b.name} - ${roomName}, ${b.guests} fő, ${nights} éj (${formattedCheckIn} - ${formattedCheckOut})`;
 
-      // 1. Create activity (always exists)
-      allActivities.push({
-        id: `${b.id}-create`,
-        title: 'Új ajánlatkérés érkezett',
-        description,
-        timestamp: new Date(b.createdAt),
-        status: 'new',
-      });
+      if (b.status === 'closed') {
+        allActivities.push({
+          id: `${b.id}-closed`,
+          title: 'Szoba lezárva',
+          description: `${roomName} lezárva: ${formattedCheckIn} - ${formattedCheckOut}`,
+          timestamp: new Date(b.createdAt),
+          status: 'closed',
+        });
+      } else {
+        // 1. Create activity (always exists)
+        allActivities.push({
+          id: `${b.id}-create`,
+          title: 'Új ajánlatkérés érkezett',
+          description,
+          timestamp: new Date(b.createdAt),
+          status: 'new',
+        });
 
-      // 2. Action activity (if accepted or rejected)
-      if (b.status === 'accepted') {
-        allActivities.push({
-          id: `${b.id}-accept`,
-          title: 'Foglalás visszaigazolva',
-          description,
-          timestamp: new Date(b.acceptedAt || b.updatedAt),
-          status: 'completed',
-        });
-      } else if (b.status === 'rejected') {
-        allActivities.push({
-          id: `${b.id}-reject`,
-          title: 'Ajánlatkérés elutasítva',
-          description,
-          timestamp: new Date(b.updatedAt),
-          status: 'rejected',
-        });
+        // 2. Action activity (if accepted or rejected)
+        if (b.status === 'accepted') {
+          allActivities.push({
+            id: `${b.id}-accept`,
+            title: 'Foglalás visszaigazolva',
+            description,
+            timestamp: new Date(b.acceptedAt || b.updatedAt),
+            status: 'completed',
+          });
+        } else if (b.status === 'rejected') {
+          allActivities.push({
+            id: `${b.id}-reject`,
+            title: 'Ajánlatkérés elutasítva',
+            description,
+            timestamp: new Date(b.updatedAt),
+            status: 'rejected',
+          });
+        }
       }
     });
 

@@ -7,7 +7,8 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
-  XCircle
+  XCircle,
+  Lock
 } from 'lucide-react';
 import { checkAuth } from '../../actions/auth';
 import { getDashboardData } from '../../actions/bookings';
@@ -95,11 +96,13 @@ export default async function AdminDashboard() {
                             ${activity.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : ''}
                             ${activity.status === 'rejected' ? 'bg-red-100 text-red-700' : ''}
                             ${activity.status === 'info' ? 'bg-blue-100 text-blue-700' : ''}
+                            ${activity.status === 'closed' ? 'bg-stone-900 text-white' : ''}
                           `}>
                             {activity.status === 'new' && <AlertCircle size={18} />}
                             {activity.status === 'completed' && <CheckCircle2 size={18} />}
                             {activity.status === 'rejected' && <XCircle size={18} />}
                             {activity.status === 'info' && <Clock size={18} />}
+                            {activity.status === 'closed' && <Lock size={18} />}
                           </div>
                         </div>
                         <div className="min-w-0 flex-1 py-1.5">
