@@ -4,6 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const next = require('next');
 
+const util = require('util');
+
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const handle = app.getRequestHandler();
@@ -13,14 +15,16 @@ const PORT = process.env.PORT || 3000;
 const logFilePath = path.join(__dirname, 'server.log');
 const logStream = fs.createWriteStream(logFilePath, { flags: 'a' });
 
-// Redirect console.log and console.error to write to the file
-console.log = function (d) {
-    logStream.write(`[LOG] [${new Date().toISOString()}] ${d}\n`);
-    process.stdout.write(d + '\n');
+// Redirect console.log and console.error to write to the file (supporting multiple arguments and Error stacks)
+console.log = function (...args) {
+    const formatted = util.format(...args);
+    logStream.write(`[LOG] [${new Date().toISOString()}] ${formatted}\n`);
+    process.stdout.write(formatted + '\n');
 };
-console.error = function (d) {
-    logStream.write(`[ERROR] [${new Date().toISOString()}] ${d}\n`);
-    process.stderr.write(d + '\n');
+console.error = function (...args) {
+    const formatted = util.format(...args);
+    logStream.write(`[ERROR] [${new Date().toISOString()}] ${formatted}\n`);
+    process.stderr.write(formatted + '\n');
 };
 
 // 2. Basic Auth Helper Function
