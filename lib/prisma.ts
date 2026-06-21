@@ -1,21 +1,22 @@
 import { PrismaClient } from '@prisma/client';
+import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 
-// Dinamikusan felépítjük a kapcsolódási URL-t a különálló környezeti változókból
+// Dinamikusan felépítjük a kapcsolódást a különálló környezeti változókból
 const dbUser = process.env.DB_USER || '';
 const dbPassword = process.env.DB_PASSWORD || '';
 const dbHost = process.env.DB_HOST || 'localhost';
 const dbName = process.env.DB_NAME || '';
 
-const databaseUrl = `mysql://${dbUser}:${dbPassword}@${dbHost}:3306/${dbName}`;
-
 const prismaClientSingleton = () => {
-  return new PrismaClient({
-    datasources: {
-      db: {
-        url: databaseUrl,
-      },
-    },
+  const adapter = new PrismaMariaDb({
+    host: dbHost,
+    port: 3306,
+    user: dbUser,
+    password: dbPassword,
+    database: dbName,
   });
+
+  return new PrismaClient({ adapter });
 };
 
 declare global {

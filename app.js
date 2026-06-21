@@ -6,6 +6,10 @@ const next = require('next');
 
 const util = require('util');
 
+// Run database synchronization (creates tables if they don't exist)
+const { runSync } = require('./prisma/sync');
+runSync();
+
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const handle = app.getRequestHandler();

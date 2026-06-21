@@ -51,7 +51,15 @@ function runSync() {
       },
       stdio: 'inherit',
     });
-    console.log('Database synchronization completed successfully.');
+    console.log('Generating Prisma Client...');
+    execSync('npx prisma generate', {
+      env: {
+        ...process.env,
+        DATABASE_URL: databaseUrl,
+      },
+      stdio: 'inherit',
+    });
+    console.log('Database synchronization and client generation completed successfully.');
   } catch (error) {
     console.error('Error during database synchronization:', error);
     process.exit(1);
