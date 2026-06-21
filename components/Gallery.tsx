@@ -15,6 +15,7 @@ export default function Gallery({ images }: GalleryProps) {
   const [index, setIndex] = useState(0);
   const [page, setPage] = useState(0);
   const [columns, setColumns] = useState(4);
+  const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
 
   React.useEffect(() => {
     const handleResize = () => {
@@ -87,7 +88,7 @@ export default function Gallery({ images }: GalleryProps) {
               {displayedImages.map((src, i) => (
                   <div
                     key={src}
-                    className="relative aspect-square cursor-pointer overflow-hidden rounded-lg group animate-fade-in"
+                    className="relative aspect-square cursor-pointer overflow-hidden rounded-lg group animate-fade-in bg-stone-50 border border-dashed border-stone-200"
                     onClick={() => {
                         const globalIndex = (page * imagesPerPage) + i;
                         setIndex(globalIndex);
@@ -100,7 +101,19 @@ export default function Gallery({ images }: GalleryProps) {
                         fill
                         sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                         className="object-cover transition-transform duration-500 group-hover:scale-110"
+                        onLoad={() => {
+                            setLoadedImages(prev => ({ ...prev, [src]: true }));
+                        }}
                     />
+                    {!loadedImages[src] && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-stone-50">
+                            <div className="flex items-end justify-center gap-1.5 h-6">
+                                <div className="w-1.5 h-6 bg-emerald-600 rounded-full origin-bottom animate-loading-bar-1" />
+                                <div className="w-1.5 h-6 bg-emerald-600 rounded-full origin-bottom animate-loading-bar-2" />
+                                <div className="w-1.5 h-6 bg-emerald-600 rounded-full origin-bottom animate-loading-bar-3" />
+                            </div>
+                        </div>
+                    )}
                     <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                         <span className="text-white font-medium tracking-wider opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform translate-y-4 group-hover:translate-y-0">Nagyítás</span>
                     </div>

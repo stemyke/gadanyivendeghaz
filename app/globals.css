@@ -5,9 +5,21 @@
   --foreground: #171717;
 }
 
-@theme inline {
+@theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --animate-loading-bar-1: loading-bar 1s ease-in-out infinite;
+  --animate-loading-bar-2: loading-bar 1s ease-in-out infinite 0.15s;
+  --animate-loading-bar-3: loading-bar 1s ease-in-out infinite 0.3s;
+
+  @keyframes loading-bar {
+    0%, 100% {
+      transform: scaleY(0.3);
+    }
+    50% {
+      transform: scaleY(1);
+    }
+  }
 }
 
 @media (prefers-color-scheme: dark) {
