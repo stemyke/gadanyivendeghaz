@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { 
   LayoutDashboard, 
   CalendarRange, 
@@ -11,17 +11,14 @@ import {
   LogOut, 
   Menu, 
   X, 
-  User,
   Home
 } from 'lucide-react';
+import { logout } from '../app/actions/auth';
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AdminSidebar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   const navItems = [
     { name: 'Áttekintés', href: '/admin', icon: LayoutDashboard },
@@ -30,8 +27,16 @@ export default function AdminLayout({
     { name: 'Beállítások', href: '/admin/settings', icon: Settings },
   ];
 
+  const handleLogout = async () => {
+    if (confirm('Biztosan ki szeretne jelentkezni?')) {
+      await logout();
+      router.push('/admin/login');
+      router.refresh();
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-stone-100 flex flex-col md:flex-row text-stone-800">
+    <>
       {/* Mobile Top Navbar */}
       <header className="md:hidden flex items-center justify-between bg-emerald-950 text-white px-6 py-4 shadow-md sticky top-0 z-50">
         <div className="flex items-center gap-2">
@@ -47,7 +52,7 @@ export default function AdminLayout({
 
       {/* Sidebar (Desktop) / Mobile Drawer */}
       <aside className={`
-        fixed inset-y-0 left-0 z-40 w-64 bg-emerald-950 text-stone-200 transform transition-transform duration-300 ease-in-out flex flex-col justify-between
+        fixed inset-y-0 left-0 z-40 w-64 bg-emerald-950 text-stone-200 transform transition-transform duration-300 ease-in-out flex flex-col justify-between h-full
         md:translate-x-0 md:static md:h-screen
         ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
@@ -100,7 +105,7 @@ export default function AdminLayout({
             Vissza a főoldalra
           </Link>
           <button
-            onClick={() => alert('Kijelentkezés...')}
+            onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-red-950/40 hover:text-red-400 text-stone-300 transition-colors text-left"
           >
             <LogOut size={18} />
@@ -109,27 +114,6 @@ export default function AdminLayout({
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-h-screen">
-        {/* Top header (Desktop only) */}
-        <header className="hidden md:flex items-center justify-between h-20 bg-white border-b border-stone-200 px-8 shadow-sm">
-          <h1 className="text-xl font-semibold text-stone-800">
-            {navItems.find(item => item.href === pathname)?.name || 'Adminisztráció'}
-          </h1>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-800 font-semibold border border-emerald-200">
-              <User size={18} />
-            </div>
-            <span className="text-sm font-medium text-stone-600">Adminisztrátor</span>
-          </div>
-        </header>
-
-        {/* Content Wrapper */}
-        <main className="flex-1 p-6 md:p-8 bg-stone-50 overflow-y-auto">
-          {children}
-        </main>
-      </div>
-
       {/* Backdrop for mobile menu */}
       {mobileMenuOpen && (
         <div 
@@ -137,6 +121,6 @@ export default function AdminLayout({
           className="fixed inset-0 bg-black/40 z-30 md:hidden"
         />
       )}
-    </div>
+    </>
   );
 }
