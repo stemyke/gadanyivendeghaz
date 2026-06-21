@@ -3,10 +3,15 @@
 import React, { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { register } from '../../actions/auth';
-import { Loader, AlertCircle, KeyRound, User, Mail, ArrowLeft } from 'lucide-react';
+import { Loader, AlertCircle, KeyRound, User, Mail, ArrowLeft, Shield } from 'lucide-react';
 import Link from 'next/link';
 
-export default function RegisterFormClient({ isAuthenticated }: { isAuthenticated: boolean }) {
+interface RegisterFormClientProps {
+  isAuthenticated: boolean;
+  showRoleSelect: boolean;
+}
+
+export default function RegisterFormClient({ isAuthenticated, showRoleSelect }: RegisterFormClientProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -22,7 +27,7 @@ export default function RegisterFormClient({ isAuthenticated }: { isAuthenticate
       if (res.success) {
         setSuccess(true);
         setTimeout(() => {
-          router.push('/admin');
+          router.push(isAuthenticated ? '/admin/users' : '/admin');
           router.refresh();
         }, 1500);
       } else {
@@ -138,6 +143,26 @@ export default function RegisterFormClient({ isAuthenticated }: { isAuthenticate
                 <KeyRound size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
               </div>
             </div>
+
+            {showRoleSelect && (
+              <div>
+                <label htmlFor="role" className="block text-sm font-medium text-stone-600 mb-1">
+                  Szerepkör
+                </label>
+                <div className="relative">
+                  <select
+                    id="role"
+                    name="role"
+                    required
+                    className="w-full p-3 pl-10 bg-stone-50 rounded-xl border border-stone-200 focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 transition outline-none text-stone-800 appearance-none cursor-pointer"
+                  >
+                    <option value="admin">Adminisztrátor</option>
+                    <option value="super">Szuperadminisztrátor</option>
+                  </select>
+                  <Shield size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+                </div>
+              </div>
+            )}
 
             <button
               type="submit"

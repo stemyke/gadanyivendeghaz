@@ -7,6 +7,7 @@ export interface User {
   password?: string;
   fullname: string;
   email: string;
+  role?: string;
   createdAt?: Date;
 }
 
@@ -46,11 +47,72 @@ export const UserModel = {
           password: hashedPassword,
           fullname: user.fullname,
           email: user.email,
+          role: user.role || 'admin',
         },
       });
       return true;
     } catch (error) {
       console.error('Failed to create user:', error);
+      return false;
+    }
+  },
+
+  async getUsers(): Promise<Omit<User, 'password'>[]> {
+    try {
+      const users = await prisma.user.findMany({
+        select: {
+          id: true,
+          username: true,
+          fullname: true,
+          email: true,
+          role: true,
+          createdAt: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+      return users;
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+      return [];
+    }
+  },
+
+  async updatePassword(username: string, passwordPlain: string): Promise<boolean> {
+    const hashedPassword = hashPassword(passwordPlain);
+    try {
+      await prisma.user.update({
+        where: { username },
+        data: { password: hashedPassword },
+      });
+      return true;
+    } catch (error) {
+      console.error('Failed to update password:', error);
+      return false;
+    }
+  },
+
+  async findUserById(id: number): Promise<User | null> {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id },
+      });
+      return user;
+    } catch (error) {
+      console.error('Failed to find user by id:', error);
+      return null;
+    }
+  },
+
+  async deleteUser(id: number): Promise<boolean> {
+    try {
+      await prisma.user.delete({
+        where: { id },
+      });
+      return true;
+    } catch (error) {
+      console.error('Failed to delete user:', error);
       return false;
     }
   }

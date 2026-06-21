@@ -11,11 +11,12 @@ import {
   LogOut, 
   Menu, 
   X, 
-  Home
+  Home,
+  Users
 } from 'lucide-react';
 import { logout } from '../app/actions/auth';
 
-export default function AdminSidebar() {
+export default function AdminSidebar({ role }: { role: string | null }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -24,6 +25,7 @@ export default function AdminSidebar() {
     { name: 'Áttekintés', href: '/admin', icon: LayoutDashboard },
     { name: 'Foglalások', href: '/admin/bookings', icon: CalendarRange },
     { name: 'Galéria', href: '/admin/gallery', icon: ImageIcon },
+    ...(role === 'super' ? [{ name: 'Felhasználók', href: '/admin/users', icon: Users }] : []),
     { name: 'Beállítások', href: '/admin/settings', icon: Settings },
   ];
 

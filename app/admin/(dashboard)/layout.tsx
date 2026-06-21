@@ -9,7 +9,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { isAuthenticated, username, hasAnyUsers } = await checkAuth();
+  const { isAuthenticated, username, hasAnyUsers, role } = await checkAuth();
 
   // Route guarding: redirect if not authenticated
   if (!isAuthenticated) {
@@ -22,7 +22,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-stone-100 flex flex-col md:flex-row text-stone-800">
-      <AdminSidebar />
+      <AdminSidebar role={role} />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-h-screen">

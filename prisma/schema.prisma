@@ -12,6 +12,7 @@ model User {
   password  String
   fullname  String
   email     String
+  role      String   @default("admin")
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("users")
