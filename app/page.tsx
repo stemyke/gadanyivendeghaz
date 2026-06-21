@@ -1,6 +1,6 @@
 import React from 'react';
 import { getGalleryImages } from './actions/gallery';
-import ClientPage from './ClientPage';
+import ClientPage from '../components/ClientPage';
 
 export default async function Home() {
   const images = await getGalleryImages();

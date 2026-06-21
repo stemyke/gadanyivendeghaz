@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Navigation from '../components/Navigation';
-import Hero from '../components/Hero';
-import Introduction from '../components/Introduction';
-import Features from '../components/Features';
-import RoomsSection from '../components/RoomsSection';
-import BookingSection from '../components/BookingSection';
-import Gallery from '../components/Gallery';
-import Footer from '../components/Footer';
+import Navigation from './Navigation';
+import Hero from './Hero';
+import Introduction from './Introduction';
+import Features from './Features';
+import RoomsSection from './RoomsSection';
+import BookingSection from './BookingSection';
+import Gallery from './Gallery';
+import Footer from './Footer';
 
 interface ClientPageProps {
   galleryImages: string[];
@@ -24,10 +24,10 @@ export default function ClientPage({ galleryImages }: ClientPageProps) {
       setScrolled(window.scrollY > 50);
       setOffsetY(window.scrollY);
     };
-    
+
     // Futás azonnal mount-kor az induló scrollhelyzet (pl. hash linkek) észleléséhez
     handleScroll();
-    
+
     // Késleltetett futtatás a böngésző aszinkron hash-re ugrásának lefedéséhez
     const timer = setTimeout(handleScroll, 100);
 
