@@ -47,7 +47,13 @@ export default function RoomsSection() {
                 <div className="flex items-center gap-2 text-sm text-stone-500 mb-4">
                   <Users size={16} className="text-emerald-600" /> <span>Kapacitás: <strong>{room.capacity} fő</strong></span>
                 </div>
-                <button onClick={() => { document.getElementById('booking')?.scrollIntoView({behavior: 'smooth'}); }} className="w-full text-center text-emerald-700 font-bold text-sm bg-emerald-50 py-2 rounded-lg hover:bg-emerald-100 transition-colors">
+                <button 
+                  onClick={() => {
+                    const event = new CustomEvent('select-room-booking', { detail: { roomId: room.id } });
+                    window.dispatchEvent(event);
+                  }} 
+                  className="w-full text-center text-emerald-700 font-bold text-sm bg-emerald-50 py-2 rounded-lg hover:bg-emerald-100 transition-colors cursor-pointer"
+                >
                   Lefoglalom
                 </button>
               </div>

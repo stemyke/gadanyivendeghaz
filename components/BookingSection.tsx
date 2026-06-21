@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useState, useEffect, useTransition } from 'react';
 import Image from 'next/image';
 import { Check, ArrowRight, Loader, AlertTriangle, ShieldCheck } from 'lucide-react';
 import Calendar from './Calendar';
@@ -25,6 +25,42 @@ export default function BookingSection({ tolerance = 0 }: { tolerance?: number }
   const [bookingStep, setBookingStep] = useState(1);
   const [isPending, startTransition] = useTransition();
   const [submissionStatus, setSubmissionStatus] = useState<'success' | 'error' | null>(null);
+
+  useEffect(() => {
+    const handleSelectRoom = async (e: Event) => {
+      const customEvent = e as CustomEvent<{ roomId: number }>;
+      const roomId = customEvent.detail.roomId;
+      
+      setSelectedRoomId(roomId);
+      const room = Rooms.find(r => r.id === roomId);
+      if (room && guests > room.capacity) {
+        setGuests(room.capacity);
+      }
+      
+      // Reset any previous selection
+      setSelectedDate(null);
+      setEndDate(null);
+
+      // Smooth scroll to the booking section
+      document.getElementById('booking')?.scrollIntoView({ behavior: 'smooth' });
+
+      setLoadingDates(true);
+      try {
+        const dates = await getBookedDates(roomId);
+        setOccupiedDates(dates);
+        setBookingStep(2);
+      } catch (error) {
+        console.error('Failed to load room dates:', error);
+      } finally {
+        setLoadingDates(false);
+      }
+    };
+
+    window.addEventListener('select-room-booking', handleSelectRoom);
+    return () => {
+      window.removeEventListener('select-room-booking', handleSelectRoom);
+    };
+  }, [guests]);
 
   const handleRoomSelect = async (roomId: number) => {
     setSelectedRoomId(roomId);

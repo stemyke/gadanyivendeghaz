@@ -63,17 +63,31 @@ export default function Calendar({ selectedDate, endDate, onDateClick, occupiedD
     return false;
   };
 
-  const isPastOrOccupied = (day: number) => {
-    const checkDate = new Date(currentYear, currentMonth, day);
-    checkDate.setHours(0, 0, 0, 0);
+  const getTransitionType = (checkDate: Date) => {
+    if (!occupiedDates) return null;
+    const checkTime = checkDate.getTime();
+    
+    let isCheckIn = false;
+    let isCheckOut = false;
 
-    // 1. Past days
-    if (checkDate < today) return true;
+    for (const range of occupiedDates) {
+      const start = new Date(range.startDate);
+      const end = new Date(range.endDate);
+      start.setHours(0, 0, 0, 0);
+      end.setHours(0, 0, 0, 0);
 
-    // 2. Already occupied days
-    if (isOccupiedDate(checkDate)) return true;
+      if (checkTime === start.getTime()) {
+        isCheckIn = true;
+      }
+      if (checkTime === end.getTime()) {
+        isCheckOut = true;
+      }
+    }
 
-    return false;
+    if (isCheckIn && isCheckOut) return 'both';
+    if (isCheckIn) return 'checkin';
+    if (isCheckOut) return 'checkout';
+    return null;
   };
 
   const isValidCheckoutDate = (day: number) => {
@@ -114,9 +128,25 @@ export default function Calendar({ selectedDate, endDate, onDateClick, occupiedD
     return true;
   };
 
+  const isDayDisabled = (day: number) => {
+    const checkDate = new Date(currentYear, currentMonth, day);
+    checkDate.setHours(0, 0, 0, 0);
+
+    const isPast = checkDate < today;
+    const isOccupied = isOccupiedDate(checkDate);
+    const validCheckout = isValidCheckoutDate(day);
+
+    const inCheckoutMode = selectedDate && !endDate;
+    return isPast || (
+      inCheckoutMode
+        ? (!validCheckout && isOccupied)
+        : isOccupied
+    );
+  };
+
   const handleDateClick = (day: number) => {
     const clickedDate = new Date(currentYear, currentMonth, day);
-    if (isPastOrOccupied(day)) return;
+    if (isDayDisabled(day)) return;
     onDateClick(clickedDate);
   };
 
@@ -181,22 +211,33 @@ export default function Calendar({ selectedDate, endDate, onDateClick, occupiedD
       <div className="grid grid-cols-7 gap-2">
         {blanks.map((_, i) => <div key={`blank-${i}`} className="h-10"></div>)}
         {days.map(day => {
-          const disabled = isPastOrOccupied(day);
+          const checkDate = new Date(currentYear, currentMonth, day);
+          checkDate.setHours(0, 0, 0, 0);
+
+          const isPast = checkDate < today;
+          const isOccupied = isOccupiedDate(checkDate);
+          const disabled = isDayDisabled(day);
           const validCheckout = isValidCheckoutDate(day);
+          const transitionType = getTransitionType(checkDate);
+
           return (
             <button
               key={day}
               onClick={() => handleDateClick(day)}
               disabled={disabled}
               className={`
-                h-10 w-10 rounded-full flex items-center justify-center text-sm transition-all duration-300 cursor-pointer
-                ${disabled 
+                h-10 w-10 rounded-full flex items-center justify-center text-sm transition-all duration-300
+                ${isPast 
                   ? 'text-stone-300 cursor-not-allowed bg-transparent'
                   : isSelected(day) 
-                  ? 'bg-emerald-800 text-white shadow-lg scale-105 font-semibold' 
+                  ? 'bg-emerald-800 text-white shadow-lg scale-105 font-semibold cursor-pointer' 
+                  : transitionType !== null
+                  ? `${disabled ? 'cursor-not-allowed bg-stone-100 text-stone-400' : 'cursor-pointer bg-stone-200 text-stone-800 hover:bg-emerald-50 hover:text-emerald-800'} font-medium border border-stone-300/40`
+                  : isOccupied
+                  ? 'bg-stone-400 text-white cursor-not-allowed font-medium'
                   : selectedDate && !endDate && !validCheckout
-                  ? 'text-stone-400 hover:bg-emerald-50 hover:text-emerald-800'
-                  : 'hover:bg-emerald-50 text-stone-600 hover:text-emerald-800'
+                  ? 'text-stone-400 hover:bg-emerald-50 hover:text-emerald-800 cursor-pointer'
+                  : 'hover:bg-emerald-50 text-stone-600 hover:text-emerald-800 cursor-pointer'
                 }
               `}
             >
