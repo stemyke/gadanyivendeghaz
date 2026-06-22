@@ -1,30 +1,8 @@
 const { execSync } = require('child_process');
-const fs = require('fs');
 const path = require('path');
 
 function loadEnv() {
-  const envPath = path.resolve(__dirname, '../.env');
-  if (fs.existsSync(envPath)) {
-    const envConfig = fs.readFileSync(envPath, 'utf-8');
-    envConfig.split(/\r?\n/).forEach(line => {
-      // Ignore comments and empty lines
-      if (line.trim().startsWith('#') || !line.trim()) return;
-      const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
-      if (match) {
-        const key = match[1];
-        let value = match[2] || '';
-        // remove quotes if present
-        if (value.startsWith('"') && value.endsWith('"')) {
-          value = value.slice(1, -1);
-        } else if (value.startsWith("'") && value.endsWith("'")) {
-          value = value.slice(1, -1);
-        }
-        if (!process.env[key]) {
-          process.env[key] = value.trim();
-        }
-      }
-    });
-  }
+  require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 }
 
 function runSync() {
