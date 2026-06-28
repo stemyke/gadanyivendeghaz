@@ -155,7 +155,7 @@ export default function BookingRow({ booking }: BookingRowProps) {
             </span>
           )}
         </td>
-        <td className="px-6 py-4 text-right whitespace-nowrap sticky right-0 bg-white group-hover:bg-stone-50 transition-colors shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.05)] border-l border-stone-100/50 border-b border-stone-100 z-10">
+        <td className="px-6 py-4 text-right whitespace-nowrap sticky right-0 bg-white group-hover:bg-stone-50 transition-colors shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.05)] border-l border-stone-100/50 border-b border-stone-100 z-10 sticky-actions">
           <div className="flex items-center justify-end gap-1.5">
             {booking.status === 'pending' && (
               <>

@@ -39,3 +39,9 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Ensure sticky table actions column inherits hover background cleanly */
+tr.group:hover td.sticky-actions {
+  background-color: #fafaf9 !important;
+}
+
