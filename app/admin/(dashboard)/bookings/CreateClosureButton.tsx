@@ -80,7 +80,7 @@ export default function CreateClosureButton() {
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in text-left">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[1.5px] animate-fade-in text-left">
           <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 border border-stone-200 flex flex-col space-y-4 max-h-[90vh] overflow-y-auto">
             
             {/* Modal Header */}

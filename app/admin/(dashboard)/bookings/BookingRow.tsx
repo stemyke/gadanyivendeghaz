@@ -5,7 +5,7 @@ import { updateBooking } from '../../../actions/bookings';
 import DeleteBookingButton from './DeleteBookingButton';
 import { Rooms } from '../../../../data/rooms';
 import { useRouter } from 'next/navigation';
-import { Edit2, Check, X, Mail, Calendar, User, Users, ShieldAlert, Loader, DollarSign } from 'lucide-react';
+import { Edit2, Mail, Calendar, User, Users, ShieldAlert, Loader, X } from 'lucide-react';
 
 interface Booking {
   id: number;
@@ -44,21 +44,8 @@ export default function BookingRow({ booking }: BookingRowProps) {
 
   const formattedCheckIn = new Date(booking.startDate).toLocaleDateString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit' });
   const formattedCheckOut = new Date(booking.endDate).toLocaleDateString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit' });
-  const formattedCreated = new Date(booking.createdAt).toLocaleDateString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
   
   const nights = Math.round((new Date(booking.endDate).getTime() - new Date(booking.startDate).getTime()) / (1000 * 60 * 60 * 24));
-
-  const handleStatusChange = (status: 'accepted' | 'rejected') => {
-    setError(null);
-    startTransition(async () => {
-      const res = await updateBooking(booking.id, { status });
-      if (res.success) {
-        router.refresh();
-      } else {
-        setError(res.error || 'Hiba történt a státusz frissítése során.');
-      }
-    });
-  };
 
   const handleSaveEdit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,93 +93,10 @@ export default function BookingRow({ booking }: BookingRowProps) {
               <span className="text-xs text-stone-400 flex items-center gap-1 whitespace-nowrap"><Mail size={12} /> {booking.email}</span>
             </div>
           </div>
-        </td>
-        <td className="px-6 py-4 border-b border-stone-100">
-          <span className="text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-full uppercase tracking-wider whitespace-nowrap">
-            {room?.name || `${booking.roomId}. szoba`}
-          </span>
-        </td>
-        <td className="px-6 py-4 border-b border-stone-100">
-          <div className="flex flex-col text-stone-600">
-            <div className="flex items-start gap-1.5">
-              <Calendar size={14} className="shrink-0 mt-0.5 text-stone-400" />
-              <div className="flex flex-col text-sm font-medium whitespace-nowrap leading-tight">
-                <span>{formattedCheckIn} -</span>
-                <span>{formattedCheckOut}</span>
-              </div>
-            </div>
-            <span className="text-xs text-stone-400 mt-1 pl-5 whitespace-nowrap">{nights} éjszaka</span>
-          </div>
-        </td>
-        <td className="px-6 py-4 font-medium text-stone-700 whitespace-nowrap border-b border-stone-100">
-          <div className="flex items-center gap-1">
-            <Users size={14} className="text-stone-400" />
-            {booking.guests} fő
-          </div>
-        </td>
-        <td className="px-6 py-4 font-semibold text-emerald-800 whitespace-nowrap border-b border-stone-100">
-          {booking.totalPrice}
-        </td>
-        <td className="px-6 py-4 border-b border-stone-100">
-          {booking.status === 'pending' && (
-            <span className="inline-flex items-center gap-1 text-xs bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 rounded-full font-medium whitespace-nowrap">
-              Válaszra vár
-            </span>
-          )}
-          {booking.status === 'accepted' && (
-            <span className="inline-flex items-center gap-1 text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-full font-medium whitespace-nowrap">
-              Elfogadva
-            </span>
-          )}
-          {booking.status === 'rejected' && (
-            <span className="inline-flex items-center gap-1 text-xs bg-red-50 text-red-800 border border-red-200 px-2.5 py-1 rounded-full font-medium whitespace-nowrap">
-              Elutasítva
-            </span>
-          )}
-          {booking.status === 'closed' && (
-            <span className="inline-flex items-center gap-1 text-xs bg-stone-900 text-white border border-stone-950 px-2.5 py-1 rounded-full font-medium whitespace-nowrap">
-              Szoba lezárva
-            </span>
-          )}
-        </td>
-        <td className="px-6 py-4 text-right whitespace-nowrap sticky right-0 bg-white group-hover:bg-stone-50 transition-colors shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.05)] border-l border-stone-100/50 border-b border-stone-100 z-10 sticky-actions">
-          <div className="flex items-center justify-end gap-1.5">
-            {booking.status === 'pending' && (
-              <>
-                <button
-                  onClick={() => handleStatusChange('accepted')}
-                  disabled={isPending}
-                  className="p-2 text-emerald-600 hover:text-white hover:bg-emerald-600 disabled:opacity-50 rounded-lg border border-transparent hover:border-emerald-700 transition-all flex items-center justify-center cursor-pointer"
-                  title="Elfogadás"
-                >
-                  <Check size={16} />
-                </button>
-                <button
-                  onClick={() => handleStatusChange('rejected')}
-                  disabled={isPending}
-                  className="p-2 text-red-600 hover:text-white hover:bg-red-600 disabled:opacity-50 rounded-lg border border-transparent hover:border-red-700 transition-all flex items-center justify-center cursor-pointer"
-                  title="Elutasítás"
-                >
-                  <X size={16} />
-                </button>
-              </>
-            )}
-            
-            <button
-              onClick={() => { setError(null); setIsModalOpen(true); }}
-              disabled={isPending}
-              className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg border border-transparent transition-all flex items-center justify-center cursor-pointer"
-              title="Módosítás / Részletek"
-            >
-              <Edit2 size={16} />
-            </button>
 
-            <DeleteBookingButton bookingId={booking.id} guestName={booking.name} />
-          </div>
-
-          {/* Edit Modal */}
+          {/* Edit Modal (moved here to escape the sticky cell z-index stacking context) */}
           {isModalOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in text-left">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[1.5px] animate-fade-in text-left">
               <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 border border-stone-200 flex flex-col space-y-4">
                 
                 {/* Modal Header */}
@@ -250,7 +154,7 @@ export default function BookingRow({ booking }: BookingRowProps) {
                           required
                           value={editEndDate}
                           onChange={(e) => setEditEndDate(e.target.value)}
-                          className="w-full p-2.5 pl-8 bg-stone-50 rounded-xl border border-stone-200 text-sm focus:border-emerald-500 focus:bg-white outline-none text-stone-800 font-sans"
+                          className="w-full p-2.5 pl-8 bg-stone-50 rounded-xl border border-stone-200 text-sm focus:border-emerald-500 focus:bg-white outline-none text-stone-850 font-sans"
                         />
                         <Calendar size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400" />
                       </div>
@@ -272,7 +176,7 @@ export default function BookingRow({ booking }: BookingRowProps) {
                             if (editGuests === 0) setEditGuests(2);
                           }
                         }}
-                        className="w-full p-2.5 bg-stone-50 rounded-xl border border-stone-200 text-sm focus:border-emerald-500 focus:bg-white outline-none text-stone-800 cursor-pointer font-sans"
+                        className="w-full p-2.5 bg-stone-50 rounded-xl border border-stone-200 text-sm focus:border-emerald-500 focus:bg-white outline-none text-stone-850 cursor-pointer font-sans"
                       >
                         <option value="pending">Válaszra vár (Pending)</option>
                         <option value="accepted">Elfogadva (Accepted)</option>
@@ -293,7 +197,7 @@ export default function BookingRow({ booking }: BookingRowProps) {
                             max={maxGuests}
                             value={editGuests}
                             onChange={(e) => setEditGuests(Math.max(1, Math.min(maxGuests, Number(e.target.value))))}
-                            className="w-full p-2.5 pl-8 bg-stone-50 rounded-xl border border-stone-200 text-sm focus:border-emerald-500 focus:bg-white outline-none text-stone-800 font-sans"
+                            className="w-full p-2.5 pl-8 bg-stone-50 rounded-xl border border-stone-200 text-sm focus:border-emerald-500 focus:bg-white outline-none text-stone-850 font-sans"
                           />
                           <Users size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400" />
                         </div>
@@ -315,7 +219,7 @@ export default function BookingRow({ booking }: BookingRowProps) {
                             value={editName}
                             onChange={(e) => setEditName(e.target.value)}
                             placeholder="Pl. Szabó Péter"
-                            className="w-full p-2.5 pl-8 bg-white rounded-xl border border-stone-200 text-sm focus:border-emerald-500 outline-none text-stone-850 font-sans"
+                            className="w-full p-2.5 pl-8 bg-white rounded-xl border border-stone-200 text-sm focus:border-emerald-500 outline-none text-stone-855 font-sans"
                           />
                           <User size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-450" />
                         </div>
@@ -330,9 +234,9 @@ export default function BookingRow({ booking }: BookingRowProps) {
                             value={editEmail}
                             onChange={(e) => setEditEmail(e.target.value)}
                             placeholder="szabo@example.com"
-                            className="w-full p-2.5 pl-8 bg-white rounded-xl border border-stone-200 text-sm focus:border-emerald-500 outline-none text-stone-850 font-sans"
+                            className="w-full p-2.5 pl-8 bg-white rounded-xl border border-stone-200 text-sm focus:border-emerald-500 outline-none text-stone-855 font-sans"
                           />
-                          <Mail size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-450" />
+                          <Mail size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-455" />
                         </div>
                       </div>
                     </div>
@@ -371,6 +275,68 @@ export default function BookingRow({ booking }: BookingRowProps) {
               </div>
             </div>
           )}
+        </td>
+        <td className="px-6 py-4 border-b border-stone-100">
+          <span className="text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-full uppercase tracking-wider whitespace-nowrap">
+            {room?.name || `${booking.roomId}. szoba`}
+          </span>
+        </td>
+        <td className="px-6 py-4 border-b border-stone-100">
+          <div className="flex flex-col text-stone-600">
+            <div className="flex items-start gap-1.5">
+              <Calendar size={14} className="shrink-0 mt-0.5 text-stone-400" />
+              <div className="flex flex-col text-sm font-medium whitespace-nowrap leading-tight">
+                <span>{formattedCheckIn} -</span>
+                <span>{formattedCheckOut}</span>
+              </div>
+            </div>
+            <span className="text-xs text-stone-400 mt-1 pl-5 whitespace-nowrap">{nights} éjszaka</span>
+          </div>
+        </td>
+        <td className="px-6 py-4 font-medium text-stone-700 whitespace-nowrap border-b border-stone-100">
+          <div className="flex items-center gap-1">
+            <Users size={14} className="text-stone-400" />
+            {booking.guests} fő
+          </div>
+        </td>
+        <td className="px-6 py-4 font-semibold text-emerald-800 whitespace-nowrap border-b border-stone-100">
+          {booking.totalPrice}
+        </td>
+        <td className="px-6 py-4 border-b border-stone-100">
+          {booking.status === 'pending' && (
+            <span className="inline-flex items-center gap-1 text-xs bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 rounded-full font-medium whitespace-nowrap">
+              Válaszra vár
+            </span>
+          )}
+          {booking.status === 'accepted' && (
+            <span className="inline-flex items-center gap-1 text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-full font-medium whitespace-nowrap">
+              Elfogadva
+            </span>
+          )}
+          {booking.status === 'rejected' && (
+            <span className="inline-flex items-center gap-1 text-xs bg-red-50 text-red-800 border border-red-200 px-2.5 py-1 rounded-full font-medium whitespace-nowrap">
+              Elutasítva
+            </span>
+          )}
+          {booking.status === 'closed' && (
+            <span className="inline-flex items-center gap-1 text-xs bg-stone-900 text-white border border-stone-950 px-2.5 py-1 rounded-full font-medium whitespace-nowrap">
+              Szoba lezárva
+            </span>
+          )}
+        </td>
+        <td className="px-4 py-4 text-right whitespace-nowrap sticky right-0 bg-white group-hover:bg-stone-50 transition-colors shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.05)] border-l border-stone-100/50 border-b border-stone-100 z-10 sticky-actions">
+          <div className="flex items-center justify-end gap-1.5">
+            <button
+              onClick={() => { setError(null); setIsModalOpen(true); }}
+              disabled={isPending}
+              className="p-2 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg border border-transparent transition-all flex items-center justify-center cursor-pointer"
+              title="Módosítás / Részletek"
+            >
+              <Edit2 size={16} />
+            </button>
+
+            <DeleteBookingButton bookingId={booking.id} guestName={booking.name} />
+          </div>
         </td>
       </tr>
 

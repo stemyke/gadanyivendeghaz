@@ -50,7 +50,7 @@ export default function AdminSidebar({ role }: { role: string | null }) {
 
       {/* Sidebar (Desktop) / Mobile Drawer */}
       <aside className={`
-        fixed inset-y-0 left-0 z-40 w-64 bg-emerald-950 text-stone-200 transform transition-transform duration-300 ease-in-out flex flex-col justify-between h-full
+        fixed inset-y-0 left-0 z-40 w-56 bg-emerald-950 text-stone-200 transform transition-transform duration-300 ease-in-out flex flex-col justify-between h-full
         md:translate-x-0 md:static md:h-screen
         ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>

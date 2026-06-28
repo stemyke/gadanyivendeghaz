@@ -109,16 +109,16 @@ export default function BookingsTableClient({ bookings }: BookingsTableClientPro
       ) : (
         <div className="overflow-x-auto">
           {/* A border-separate és border-spacing-0 elengedhetetlen, hogy a sticky oszlop helyesen működjön */}
-          <table className="w-full min-w-[1180px] text-left border-separate border-spacing-0 table-fixed">
+          <table className="w-full min-w-[1110px] text-left border-separate border-spacing-0 table-fixed">
             <thead>
               <tr className="bg-stone-50 text-stone-500 text-xs font-semibold uppercase">
-                {renderSortHeader('Vendég', 'name', 'w-[22%] min-w-[260px]')}
-                {renderSortHeader('Szoba', 'room', 'w-[15%] min-w-[180px]')}
-                {renderSortHeader('Dátumok', 'dates', 'w-[15%] min-w-[180px]')}
+                {renderSortHeader('Vendég', 'name', 'w-[24%] min-w-[260px]')}
+                {renderSortHeader('Szoba', 'room', 'w-[16%] min-w-[180px]')}
+                {renderSortHeader('Dátumok', 'dates', 'w-[16%] min-w-[180px]')}
                 {renderSortHeader('Létszám', 'guests', 'w-[8%] min-w-[100px]')}
-                {renderSortHeader('Kalkulált ár', 'price', 'w-[12%] min-w-[140px]')}
-                {renderSortHeader('Státusz', 'status', 'w-[12%] min-w-[140px]')}
-                <th className="px-6 py-4 text-right sticky right-0 bg-stone-50 border-b border-stone-200 shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.05)] w-[16%] min-w-[180px] z-10 sticky-actions">
+                {renderSortHeader('Kalkulált ár', 'price', 'w-[13%] min-w-[140px]')}
+                {renderSortHeader('Státusz', 'status', 'w-[13%] min-w-[140px]')}
+                <th className="px-4 py-4 text-right sticky right-0 bg-stone-50 border-b border-stone-200 shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.05)] w-[10%] min-w-[110px] z-10 sticky-actions">
                   Műveletek
                 </th>
               </tr>
