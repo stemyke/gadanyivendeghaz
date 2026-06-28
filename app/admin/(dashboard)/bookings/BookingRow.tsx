@@ -95,61 +95,67 @@ export default function BookingRow({ booking }: BookingRowProps) {
 
   return (
     <>
-      <tr className="hover:bg-stone-50/60 transition-colors">
-        <td className="px-6 py-4">
+      <tr className="hover:bg-stone-50 transition-colors group">
+        <td className="px-6 py-4 border-b border-stone-100">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center font-medium text-stone-700 border border-stone-200">
+            <div className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center font-medium text-stone-700 border border-stone-200 shrink-0">
               <User size={14} />
             </div>
             <div className="flex flex-col">
-              <span className="font-medium text-stone-800">{booking.name}</span>
-              <span className="text-xs text-stone-400 flex items-center gap-1"><Mail size={12} /> {booking.email}</span>
+              <span className="text-sm font-semibold text-stone-800 whitespace-nowrap">{booking.name}</span>
+              <span className="text-xs text-stone-400 flex items-center gap-1 whitespace-nowrap"><Mail size={12} /> {booking.email}</span>
             </div>
           </div>
         </td>
-        <td className="px-6 py-4">
-          <span className="text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-full uppercase tracking-wider">
+        <td className="px-6 py-4 border-b border-stone-100">
+          <span className="text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-full uppercase tracking-wider whitespace-nowrap">
             {room?.name || `${booking.roomId}. szoba`}
           </span>
         </td>
-        <td className="px-6 py-4">
+        <td className="px-6 py-4 border-b border-stone-100">
           <div className="flex flex-col text-stone-600">
-            <span className="flex items-center gap-1.5"><Calendar size={14} /> {formattedCheckIn} - {formattedCheckOut}</span>
-            <span className="text-xs text-stone-400 mt-0.5">{nights} éjszaka</span>
+            <div className="flex items-start gap-1.5">
+              <Calendar size={14} className="shrink-0 mt-0.5 text-stone-400" />
+              <div className="flex flex-col text-sm font-medium whitespace-nowrap leading-tight">
+                <span>{formattedCheckIn} -</span>
+                <span>{formattedCheckOut}</span>
+              </div>
+            </div>
+            <span className="text-xs text-stone-400 mt-1 pl-5 whitespace-nowrap">{nights} éjszaka</span>
           </div>
         </td>
-        <td className="px-6 py-4 font-medium text-stone-700">
+        <td className="px-6 py-4 font-medium text-stone-700 whitespace-nowrap border-b border-stone-100">
           <div className="flex items-center gap-1">
             <Users size={14} className="text-stone-400" />
             {booking.guests} fő
           </div>
         </td>
-        <td className="px-6 py-4 font-semibold text-emerald-800">
+        <td className="px-6 py-4 font-semibold text-emerald-800 whitespace-nowrap border-b border-stone-100">
           {booking.totalPrice}
         </td>
-        <td className="px-6 py-4">
+        <td className="px-6 py-4 border-b border-stone-100">
           {booking.status === 'pending' && (
-            <span className="inline-flex items-center gap-1 text-xs bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 rounded-full font-medium">
+            <span className="inline-flex items-center gap-1 text-xs bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-1 rounded-full font-medium whitespace-nowrap">
               Válaszra vár
             </span>
           )}
           {booking.status === 'accepted' && (
-            <span className="inline-flex items-center gap-1 text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-full font-medium">
+            <span className="inline-flex items-center gap-1 text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-1 rounded-full font-medium whitespace-nowrap">
               Elfogadva
             </span>
           )}
           {booking.status === 'rejected' && (
-            <span className="inline-flex items-center gap-1 text-xs bg-red-50 text-red-800 border border-red-200 px-2.5 py-1 rounded-full font-medium">
+            <span className="inline-flex items-center gap-1 text-xs bg-red-50 text-red-800 border border-red-200 px-2.5 py-1 rounded-full font-medium whitespace-nowrap">
               Elutasítva
             </span>
           )}
           {booking.status === 'closed' && (
-            <span className="inline-flex items-center gap-1 text-xs bg-stone-900 text-white border border-stone-950 px-2.5 py-1 rounded-full font-medium">
+            <span className="inline-flex items-center gap-1 text-xs bg-stone-900 text-white border border-stone-950 px-2.5 py-1 rounded-full font-medium whitespace-nowrap">
               Szoba lezárva
             </span>
           )}
         </td>
-        <td className="px-6 py-4 text-right">
+        <td className="px-6 py-4 text-right whitespace-nowrap sticky right-0 bg-white group-hover:bg-stone-50 transition-colors shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.05)] border-l border-stone-100/50 border-b border-stone-100 z-10">
           <div className="flex items-center justify-end gap-1.5">
             {booking.status === 'pending' && (
               <>
