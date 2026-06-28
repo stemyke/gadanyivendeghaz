@@ -125,7 +125,39 @@ export async function createBooking(data: {
   lastName: string;
   firstName: string;
   email: string;
+  honeypot: string;
+  turnstileToken: string;
 }) {
+  // 1. Honeypot check
+  if (data.honeypot !== '') {
+    console.warn('Bot detection: Honeypot field was filled');
+    return { success: false, error: 'Biztonsági ellenőrzés sikertelen (Honeypot)!' };
+  }
+
+  // 2. Turnstile token check
+  if (!data.turnstileToken) {
+    return { success: false, error: 'Kérjük, igazolja, hogy Ön nem robot!' };
+  }
+
+  try {
+    const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `secret=${encodeURIComponent(process.env.TURNSTILE_SECRET_KEY || '')}&response=${encodeURIComponent(data.turnstileToken)}`,
+    });
+
+    const verification = await response.json();
+    if (!verification.success) {
+      console.warn('Bot detection: Turnstile verification failed', verification);
+      return { success: false, error: 'Biztonsági ellenőrzés sikertelen (Turnstile)!' };
+    }
+  } catch (err) {
+    console.error('Turnstile verification error:', err);
+    return { success: false, error: 'Nem sikerült ellenőrizni a biztonsági tokent. Kérjük, próbálja újra!' };
+  }
+
   const start = new Date(data.startDate);
   const end = new Date(data.endDate);
   start.setHours(0, 0, 0, 0);

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useTransition } from 'react';
 import Image from 'next/image';
 import { Check, ArrowRight, Loader, AlertTriangle, ShieldCheck } from 'lucide-react';
 import Calendar from './Calendar';
+import Turnstile from './Turnstile';
 import { createBooking, getBookedDates } from '../app/actions/bookings';
 import { Rooms } from '../data/rooms';
 
@@ -20,11 +21,14 @@ export default function BookingSection({ tolerance = 0 }: { tolerance?: number }
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [honeypot, setHoneypot] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
 
   // UI states
   const [bookingStep, setBookingStep] = useState(1);
   const [isPending, startTransition] = useTransition();
   const [submissionStatus, setSubmissionStatus] = useState<'success' | 'error' | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     const handleSelectRoom = async (e: Event) => {
@@ -134,6 +138,13 @@ export default function BookingSection({ tolerance = 0 }: { tolerance?: number }
       return;
     }
 
+    if (!turnstileToken) {
+      alert('Kérjük, igazolja, hogy Ön nem robot!');
+      return;
+    }
+
+    setErrorMsg(null);
+
     startTransition(async () => {
       const result = await createBooking({
         roomId: selectedRoomId,
@@ -143,12 +154,15 @@ export default function BookingSection({ tolerance = 0 }: { tolerance?: number }
         lastName,
         firstName,
         email,
+        honeypot,
+        turnstileToken,
       });
 
       if (result.success) {
         setSubmissionStatus('success');
       } else {
         setSubmissionStatus('error');
+        setErrorMsg(result.error || 'Az ajánlatkérés elküldése sikertelen.');
       }
       setBookingStep(4);
     });
@@ -163,6 +177,9 @@ export default function BookingSection({ tolerance = 0 }: { tolerance?: number }
     setFirstName('');
     setLastName('');
     setEmail('');
+    setHoneypot('');
+    setTurnstileToken('');
+    setErrorMsg(null);
     setSubmissionStatus(null);
     setBookingStep(1);
   };
@@ -346,9 +363,29 @@ export default function BookingSection({ tolerance = 0 }: { tolerance?: number }
                     <div className="flex justify-between text-lg font-bold text-emerald-900"><span>Összesen:</span><span>{total.toLocaleString()} Ft</span></div>
                   </div>
 
+                  {/* Láthatatlan honeypot mező */}
+                  <div style={{ position: 'absolute', opacity: 0, zIndex: -1, pointerEvents: 'none' }}>
+                    <input
+                      type="text"
+                      name="nickname"
+                      value={honeypot}
+                      onChange={(e) => setHoneypot(e.target.value)}
+                      tabIndex={-1}
+                      autoComplete="off"
+                    />
+                  </div>
+
+                  {/* Cloudflare Turnstile */}
+                  {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
+                    <Turnstile
+                      siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+                      onVerify={(token) => setTurnstileToken(token)}
+                    />
+                  )}
+
                   <button 
                     type="submit"
-                    disabled={isPending}
+                    disabled={isPending || !turnstileToken}
                     className="w-full bg-stone-900 text-white py-4 rounded-xl font-bold text-lg hover:bg-emerald-800 transition-all mt-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:bg-stone-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
                   >
                     {isPending ? <><Loader className="animate-spin" size={20} /> Küldés...</> : 'Ajánlatkérés elküldése'}
@@ -374,7 +411,9 @@ export default function BookingSection({ tolerance = 0 }: { tolerance?: number }
                       <AlertTriangle size={48} />
                     </div>
                     <h3 className="text-2xl font-serif font-bold mb-2 text-red-900">Hiba történt!</h3>
-                    <p className="text-stone-500 mb-8 max-w-xs mx-auto">Az ajánlatkérés elküldése sikertelen. Kérjük, próbálja újra később, vagy vegye fel velünk a kapcsolatot telefonon.</p>
+                    <p className="text-stone-500 mb-8 max-w-xs mx-auto font-medium">
+                      {errorMsg || 'Az ajánlatkérés elküldése sikertelen. Kérjük, próbálja újra később, vagy vegye fel velünk a kapcsolatot telefonon.'}
+                    </p>
                   </>
                 )}
                 <button 
