@@ -20,7 +20,7 @@ const existingFiles = candidates.filter((file) =>
   fs.existsSync(path.join(rootDir, file))
 );
 
-console.log('Csomagolandó fájlok és mappák:');
+console.log('Files and directories to package:');
 existingFiles.forEach((f) => console.log(` - ${f}`));
 
 if (fs.existsSync(outputFile)) {
@@ -28,13 +28,13 @@ if (fs.existsSync(outputFile)) {
 }
 
 try {
-  // Kizárjuk a fejlesztői dev és cache mappákat a .next-ből, így drasztikusan kisebb lesz a zip
+  // Exclude dev and cache folders from .next to drastically reduce zip size
   execSync(`tar --exclude=".next/dev" --exclude=".next/cache" -a -c -f deploy.zip ${existingFiles.join(' ')}`, {
     cwd: rootDir,
     stdio: 'inherit',
   });
 } catch {
-  console.warn('A tar parancs nem sikerült, próbálkozás PowerShell Compress-Archive paranccsal...');
+  console.warn('tar command failed, falling back to PowerShell Compress-Archive...');
   const paths = existingFiles.map((f) => `'${f}'`).join(', ');
   execSync(`powershell -NoProfile -Command "Compress-Archive -Path ${paths} -DestinationPath 'deploy.zip' -Force"`, {
     cwd: rootDir,
@@ -45,8 +45,8 @@ try {
 if (fs.existsSync(outputFile)) {
   const stats = fs.statSync(outputFile);
   const sizeMb = (stats.size / (1024 * 1024)).toFixed(2);
-  console.log(`\nSikeres csomagolás! Elkészült: deploy.zip (${sizeMb} MB)`);
+  console.log(`\nSuccessfully packaged! Created: deploy.zip (${sizeMb} MB)`);
 } else {
-  console.error('\nNem sikerült létrehozni a deploy.zip fájlt.');
+  console.error('\nFailed to create deploy.zip.');
   process.exit(1);
 }
