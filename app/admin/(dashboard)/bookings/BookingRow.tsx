@@ -17,6 +17,7 @@ interface Booking {
   guests: number;
   totalPrice: string;
   status: string;
+  source: string;
   acceptedAt: string | null;
   createdAt: string;
 }
@@ -324,6 +325,23 @@ export default function BookingRow({ booking }: BookingRowProps) {
             </span>
           )}
         </td>
+        <td className="px-6 py-4 border-b border-stone-100">
+          {booking.source === 'szallas.hu' && (
+            <span className="inline-flex items-center gap-1 text-xs bg-[#ba0712]/10 text-[#ba0712] border border-[#ba0712]/20 px-2.5 py-1 rounded-full font-semibold whitespace-nowrap">
+              szallas.hu
+            </span>
+          )}
+          {booking.source === 'booking.com' && (
+            <span className="inline-flex items-center gap-1 text-xs bg-[#003b95]/10 text-[#003b95] border border-[#003b95]/20 px-2.5 py-1 rounded-full font-semibold whitespace-nowrap">
+              booking.com
+            </span>
+          )}
+          {(!booking.source || booking.source === 'local') && (
+            <span className="inline-flex items-center gap-1 text-xs bg-[#004E3B]/10 text-[#004E3B] border border-[#004E3B]/20 px-2.5 py-1 rounded-full font-semibold whitespace-nowrap">
+              Saját
+            </span>
+          )}
+        </td>
         <td className="px-4 py-4 text-right whitespace-nowrap sticky right-0 bg-white group-hover:bg-stone-50 transition-colors shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.05)] border-l border-stone-100/50 border-b border-stone-100 z-10 sticky-actions">
           <div className="flex items-center justify-end gap-1.5">
             <button
@@ -343,7 +361,7 @@ export default function BookingRow({ booking }: BookingRowProps) {
       {/* Global Error Banner */}
       {error && !isModalOpen && (
         <tr>
-          <td colSpan={7} className="px-6 py-2.5 bg-red-50 text-red-800 text-xs font-semibold border-b border-red-100">
+          <td colSpan={8} className="px-6 py-2.5 bg-red-50 text-red-800 text-xs font-semibold border-b border-red-100">
             <div className="flex items-center gap-2">
               <ShieldAlert size={14} className="shrink-0" />
               <span>{error}</span>

@@ -11,7 +11,8 @@ import {
   Menu, 
   X, 
   Home,
-  Users
+  Users,
+  RefreshCw
 } from 'lucide-react';
 import { logout } from '../app/actions/auth';
 
@@ -23,7 +24,10 @@ export default function AdminSidebar({ role }: { role: string | null }) {
   const navItems = [
     { name: 'Áttekintés', href: '/admin', icon: LayoutDashboard },
     { name: 'Foglalások', href: '/admin/bookings', icon: CalendarRange },
-    ...(role === 'super' ? [{ name: 'Felhasználók', href: '/admin/users', icon: Users }] : []),
+    ...(role === 'super' ? [
+      { name: 'Felhasználók', href: '/admin/users', icon: Users },
+      { name: 'Naptár Szinkron', href: '/admin/calendar-sync', icon: RefreshCw }
+    ] : []),
     { name: 'Beállítások', href: '/admin/settings', icon: Settings },
   ];
 

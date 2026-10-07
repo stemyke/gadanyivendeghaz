@@ -2,6 +2,7 @@ import React from 'react';
 import { getBookingsList } from '../../../actions/bookings';
 import BookingsTableClient from './BookingsTableClient';
 import CreateClosureButton from './CreateClosureButton';
+import SyncCalendarsButton from './SyncCalendarsButton';
 import { Calendar } from 'lucide-react';
 
 export default async function BookingsAdmin() {
@@ -19,7 +20,10 @@ export default async function BookingsAdmin() {
             Itt tekintheti meg a vendégek által beküldött ajánlatkéréseket és zárásokat. Elfogadhatja, elutasíthatja, vagy módosíthatja a foglalások paramétereit.
           </p>
         </div>
-        <CreateClosureButton />
+        <div className="flex flex-wrap items-center gap-3">
+          <SyncCalendarsButton />
+          <CreateClosureButton />
+        </div>
       </div>
 
       <BookingsTableClient bookings={bookings} />

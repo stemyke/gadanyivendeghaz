@@ -253,6 +253,7 @@ export async function getBookingsList() {
       guests: b.guests,
       totalPrice: b.totalPrice,
       status: b.status,
+      source: b.source,
       acceptedAt: b.acceptedAt ? b.acceptedAt.toISOString() : null,
       createdAt: b.createdAt.toISOString(),
     }));
@@ -606,5 +607,262 @@ export async function createAdminBooking(data: {
   } catch (error) {
     console.error('Failed to create admin booking:', error);
     return { success: false, error: 'Hiba történt a szoba rögzítése során.' };
+  }
+}
+
+// Private helper to parse iCalendar (.ics) files into structured JS objects
+function parseICS(icsText: string) {
+  const events: Array<{
+    uid: string;
+    startDate: Date;
+    endDate: Date;
+    summary: string;
+  }> = [];
+
+  const parts = icsText.split('BEGIN:VEVENT');
+  for (let i = 1; i < parts.length; i++) {
+    const part = parts[i].split('END:VEVENT')[0];
+    
+    const uidMatch = part.match(/UID:(.+)/i);
+    const summaryMatch = part.match(/SUMMARY:(.+)/i);
+    const dtstartMatch = part.match(/DTSTART(?:;[^:]*)?:(\d{8}T?\d{0,6}Z?)/i);
+    const dtendMatch = part.match(/DTEND(?:;[^:]*)?:(\d{8}T?\d{0,6}Z?)/i);
+
+    if (dtstartMatch && dtendMatch) {
+      const uid = uidMatch ? uidMatch[1].trim() : `imported-${Date.now()}-${i}`;
+      const summary = summaryMatch ? summaryMatch[1].trim() : 'Külső Foglalás';
+      
+      const parseDateStr = (dateStr: string) => {
+        const year = parseInt(dateStr.slice(0, 4), 10);
+        const month = parseInt(dateStr.slice(4, 6), 10) - 1;
+        const day = parseInt(dateStr.slice(6, 8), 10);
+        
+        let hours = 0;
+        let minutes = 0;
+        let seconds = 0;
+        
+        if (dateStr.includes('T')) {
+          const tIdx = dateStr.indexOf('T');
+          hours = parseInt(dateStr.slice(tIdx + 1, tIdx + 3), 10) || 0;
+          minutes = parseInt(dateStr.slice(tIdx + 3, tIdx + 5), 10) || 0;
+          seconds = parseInt(dateStr.slice(tIdx + 5, tIdx + 7), 10) || 0;
+        }
+        
+        return new Date(Date.UTC(year, month, day, hours, minutes, seconds));
+      };
+
+      const startDate = parseDateStr(dtstartMatch[1]);
+      const endDate = parseDateStr(dtendMatch[1]);
+
+      events.push({
+        uid,
+        startDate,
+        endDate,
+        summary,
+      });
+    }
+  }
+
+  return events;
+}
+
+// Server action to sync external booking calendars from booking.com and szallas.hu
+export async function syncExternalCalendars() {
+  const { isAuthenticated } = await checkAuth();
+  if (!isAuthenticated) {
+    return { success: false, error: 'Ehhez a művelethez be kell jelentkezni!' };
+  }
+
+  let totalImported = 0;
+  let totalDeleted = 0;
+  const errors: string[] = [];
+
+  try {
+    const configs = await prisma.calendarSyncConfig.findMany();
+
+    if (configs.length === 0) {
+      return { success: false, error: 'Nincsenek beállítva naptár szinkronizációs linkek az adatbázisban!' };
+    }
+
+    for (const config of configs) {
+      const room = Rooms.find(r => r.id === config.roomId);
+      const roomName = room ? room.name : `${config.roomId}. szoba`;
+
+      if (!config.url || !config.url.trim()) {
+        continue;
+      }
+
+      try {
+        const response = await fetch(config.url.trim(), {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Calendar Sync'
+          },
+          next: { revalidate: 0 } // Bypass cache
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP hiba: ${response.status}`);
+        }
+
+        const icsText = await response.text();
+        const events = parseICS(icsText);
+        const uidsInFeed = events.map(e => e.uid);
+
+        // 1. Delete local bookings from this source for this room that are no longer in the feed
+        const deletedResult = await prisma.booking.deleteMany({
+          where: {
+            roomId: config.roomId,
+            source: config.source,
+            email: { notIn: uidsInFeed }
+          }
+        });
+        totalDeleted += deletedResult.count;
+
+        // 2. Upsert bookings
+        for (const event of events) {
+          const existing = await prisma.booking.findFirst({
+            where: {
+              roomId: config.roomId,
+              source: config.source,
+              email: event.uid
+            }
+          });
+
+          if (existing) {
+            // Update if changed
+            const eventStart = new Date(event.startDate);
+            const eventEnd = new Date(event.endDate);
+            
+            if (existing.startDate.getTime() !== eventStart.getTime() || 
+                existing.endDate.getTime() !== eventEnd.getTime() || 
+                existing.name !== event.summary) {
+              await prisma.booking.update({
+                where: { id: existing.id },
+                data: {
+                  startDate: eventStart,
+                  endDate: eventEnd,
+                  name: event.summary,
+                }
+              });
+            }
+          } else {
+            // Create new
+            await prisma.booking.create({
+              data: {
+                roomId: config.roomId,
+                source: config.source,
+                startDate: event.startDate,
+                endDate: event.endDate,
+                name: event.summary,
+                email: event.uid,
+                guests: 2,
+                totalPrice: '0 Ft',
+                status: 'accepted'
+              }
+            });
+            totalImported++;
+          }
+        }
+      } catch (err: any) {
+        console.error(`Sync error for room ${config.roomId} (${config.source}):`, err);
+        errors.push(`${roomName} (${config.source}): ${err.message || err}`);
+      }
+    }
+  } catch (dbErr: any) {
+    console.error('Failed to load calendar sync configs:', dbErr);
+    return { success: false, error: 'Nem sikerült betölteni a szinkronizációs beállításokat.' };
+  }
+
+  if (errors.length > 0) {
+    return { 
+      success: false, 
+      error: `Hiba történt néhány csatorna szinkronizálásakor:\n${errors.join('\n')}` 
+    };
+  }
+
+  return { success: true, imported: totalImported, deleted: totalDeleted };
+}
+
+export async function getCalendarConfigs() {
+  const { isAuthenticated, role } = await checkAuth();
+  if (!isAuthenticated) {
+    throw new Error('Not authenticated');
+  }
+  if (role !== 'super') {
+    throw new Error('Only superadmin can access settings');
+  }
+
+  try {
+    return await prisma.calendarSyncConfig.findMany({
+      orderBy: [
+        { roomId: 'asc' },
+        { source: 'asc' }
+      ]
+    });
+  } catch (error) {
+    console.error('Failed to get calendar configs:', error);
+    return [];
+  }
+}
+
+export async function saveCalendarConfig(data: {
+  roomId: number;
+  source: string;
+  url: string;
+}) {
+  const { isAuthenticated, role } = await checkAuth();
+  if (!isAuthenticated) {
+    return { success: false, error: 'Ehhez a művelethez be kell jelentkezni!' };
+  }
+  if (role !== 'super') {
+    return { success: false, error: 'Csak szuperadmin módosíthatja ezeket a beállításokat!' };
+  }
+
+  if (!data.url.trim()) {
+    return { success: false, error: 'A link nem lehet üres!' };
+  }
+
+  try {
+    await prisma.calendarSyncConfig.upsert({
+      where: {
+        roomId_source: {
+          roomId: data.roomId,
+          source: data.source
+        }
+      },
+      update: {
+        url: data.url.trim()
+      },
+      create: {
+        roomId: data.roomId,
+        source: data.source,
+        url: data.url.trim()
+      }
+    });
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Failed to save calendar config:', error);
+    return { success: false, error: `Nem sikerült menteni a beállítást: ${error.message || error}` };
+  }
+}
+
+export async function deleteCalendarConfig(id: number) {
+  const { isAuthenticated, role } = await checkAuth();
+  if (!isAuthenticated) {
+    return { success: false, error: 'Ehhez a művelethez be kell jelentkezni!' };
+  }
+  if (role !== 'super') {
+    return { success: false, error: 'Csak szuperadmin törölheti ezeket a beállításokat!' };
+  }
+
+  try {
+    await prisma.calendarSyncConfig.delete({
+      where: { id }
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to delete calendar config:', error);
+    return { success: false, error: 'Nem sikerült törölni a beállítást.' };
   }
 }

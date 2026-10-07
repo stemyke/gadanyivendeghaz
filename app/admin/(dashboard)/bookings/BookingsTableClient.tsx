@@ -14,6 +14,7 @@ interface Booking {
   guests: number;
   totalPrice: string;
   status: string;
+  source: string;
   acceptedAt: string | null;
   createdAt: string;
 }
@@ -64,6 +65,9 @@ export default function BookingsTableClient({ bookings }: BookingsTableClientPro
     } else if (sortField === 'status') {
       valA = statusPriority[a.status] || 99;
       valB = statusPriority[b.status] || 99;
+    } else if (sortField === 'source') {
+      valA = (a.source || 'local').toLowerCase();
+      valB = (b.source || 'local').toLowerCase();
     }
 
     if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
@@ -112,13 +116,14 @@ export default function BookingsTableClient({ bookings }: BookingsTableClientPro
           <table className="w-full min-w-[1110px] text-left border-separate border-spacing-0 table-fixed">
             <thead>
               <tr className="bg-stone-50 text-stone-500 text-xs font-semibold uppercase">
-                {renderSortHeader('Vendég', 'name', 'w-[24%] min-w-[260px]')}
-                {renderSortHeader('Szoba', 'room', 'w-[16%] min-w-[180px]')}
-                {renderSortHeader('Dátumok', 'dates', 'w-[16%] min-w-[180px]')}
-                {renderSortHeader('Létszám', 'guests', 'w-[8%] min-w-[100px]')}
-                {renderSortHeader('Kalkulált ár', 'price', 'w-[13%] min-w-[140px]')}
-                {renderSortHeader('Státusz', 'status', 'w-[13%] min-w-[140px]')}
-                <th className="px-4 py-4 text-right sticky right-0 bg-stone-50 border-b border-stone-200 shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.05)] w-[10%] min-w-[110px] z-10 sticky-actions">
+                {renderSortHeader('Vendég', 'name', 'w-[22%] min-w-[240px]')}
+                {renderSortHeader('Szoba', 'room', 'w-[14%] min-w-[160px]')}
+                {renderSortHeader('Dátumok', 'dates', 'w-[14%] min-w-[160px]')}
+                {renderSortHeader('Létszám', 'guests', 'w-[8%] min-w-[80px]')}
+                {renderSortHeader('Kalkulált ár', 'price', 'w-[11%] min-w-[120px]')}
+                {renderSortHeader('Státusz', 'status', 'w-[11%] min-w-[120px]')}
+                {renderSortHeader('Forrás', 'source', 'w-[11%] min-w-[120px]')}
+                <th className="px-4 py-4 text-right sticky right-0 bg-stone-50 border-b border-stone-200 shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.05)] w-[9%] min-w-[100px] z-10 sticky-actions">
                   Műveletek
                 </th>
               </tr>
