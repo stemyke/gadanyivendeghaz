@@ -9,6 +9,7 @@ const candidates = [
   '.next',
   'public',
   'prisma',
+  'prisma.config.ts',
   'app.js',
   'next.config.ts',
   'package.json',
