@@ -41,19 +41,6 @@ process.on('unhandledRejection', (reason) => {
   origStderrWrite(msg);
 });
 
-// Ensure Prisma Client is generated (only executes if missing, never on normal reboots)
-try {
-  require.resolve('.prisma/client/default');
-} catch (e) {
-  try {
-    console.log('Prisma Client not found. Running initial generation...');
-    const { runGenerate } = require('./prisma/generate');
-    runGenerate();
-  } catch (err) {
-    console.error('Failed to auto-generate Prisma Client:', err);
-  }
-}
-
 const next = require('next');
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });

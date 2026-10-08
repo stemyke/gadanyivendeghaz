@@ -7,7 +7,7 @@ function findSchemaPath() {
     path.resolve(__dirname, 'schema.prisma'),
     path.resolve(__dirname, '../prisma/schema.prisma'),
     path.resolve(process.cwd(), 'prisma/schema.prisma'),
-    '/home/gadanyiv/app/prisma/schema.prisma',
+    path.resolve(process.cwd(), '../../../../app/prisma/schema.prisma'),
   ];
 
   return possiblePaths.find((p) => fs.existsSync(p));
