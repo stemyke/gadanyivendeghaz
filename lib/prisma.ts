@@ -1,13 +1,16 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 
-// Dinamikusan felépítjük a kapcsolódást a különálló környezeti változókból
-const dbUser = process.env.DB_USER || '';
-const dbPassword = process.env.DB_PASSWORD || '';
-const dbHost = process.env.DB_HOST || 'localhost';
-const dbName = process.env.DB_NAME || '';
-
 const prismaClientSingleton = () => {
+  const dbUser = process.env.DB_USER || '';
+  const dbPassword = process.env.DB_PASSWORD || '';
+  const dbHost = process.env.DB_HOST || '127.0.0.1';
+  const dbName = process.env.DB_NAME || '';
+
+  if (!dbUser || !dbName) {
+    console.error(`[PRISMA CONFIG ERROR] Missing credentials: DB_USER='${dbUser}', DB_HOST='${dbHost}', DB_NAME='${dbName}'`);
+  }
+
   const adapter = new PrismaMariaDb({
     host: dbHost,
     port: 3306,

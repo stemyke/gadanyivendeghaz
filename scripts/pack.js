@@ -14,7 +14,6 @@ const candidates = [
   'next.config.ts',
   'package.json',
   'package-lock.json',
-  '.env',
 ];
 
 const existingFiles = candidates.filter((file) =>
