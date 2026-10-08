@@ -8,8 +8,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "thumbs": "node scripts/generate-thumbnails.js",
     "pack:zip": "node scripts/pack.js",
-    "pack": "npm run build && node scripts/pack.js"
+    "pack": "node scripts/generate-thumbnails.js && npm run build && node scripts/pack.js"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "7.8.0",

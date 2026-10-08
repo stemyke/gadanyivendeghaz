@@ -5,9 +5,10 @@ import Image from 'next/image';
 import Lightbox from 'yet-another-react-lightbox';
 import 'yet-another-react-lightbox/styles.css';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import type { GalleryImageItem } from '../app/actions/gallery';
 
 interface GalleryProps {
-  images: string[];
+  images: (string | GalleryImageItem)[];
 }
 
 export default function Gallery({ images }: GalleryProps) {
@@ -16,6 +17,12 @@ export default function Gallery({ images }: GalleryProps) {
   const [page, setPage] = useState(0);
   const [columns, setColumns] = useState(4);
   const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
+
+  const normalizedImages: GalleryImageItem[] = useMemo(() => {
+    return images.map((img) =>
+      typeof img === 'string' ? { src: img, thumb: img } : img
+    );
+  }, [images]);
 
   React.useEffect(() => {
     const handleResize = () => {
@@ -29,18 +36,18 @@ export default function Gallery({ images }: GalleryProps) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // ÚJ LOGIKA: Az egy oldalon lévő képek száma mindig az oszlopok számának kétszerese.
+  // Az egy oldalon lévő képek száma mindig az oszlopok számának kétszerese
   const imagesPerPage = useMemo(() => columns * 2, [columns]);
 
-  const totalPages = Math.ceil(images.length / imagesPerPage);
+  const totalPages = Math.ceil(normalizedImages.length / imagesPerPage);
 
   const displayedImages = useMemo(() => {
     const start = page * imagesPerPage;
     const end = start + imagesPerPage;
-    return images.slice(start, end);
-  }, [images, page, imagesPerPage]);
+    return normalizedImages.slice(start, end);
+  }, [normalizedImages, page, imagesPerPage]);
 
-  // ÚJ LOGIKA: Kiszámoljuk, hány helykitöltőre van szükség az utolsó oldalon.
+  // Helykitöltők az utolsó oldalon
   const isLastPage = page === totalPages - 1;
   const placeholdersNeeded = isLastPage ? imagesPerPage - displayedImages.length : 0;
 
@@ -52,7 +59,7 @@ export default function Gallery({ images }: GalleryProps) {
     if (page > 0) setPage(page - 1);
   };
 
-  if (images.length === 0) {
+  if (normalizedImages.length === 0) {
     return null; 
   }
 
@@ -85,9 +92,9 @@ export default function Gallery({ images }: GalleryProps) {
             )}
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {displayedImages.map((src, i) => (
+              {displayedImages.map((item, i) => (
                   <div
-                    key={src}
+                    key={item.src}
                     className="relative aspect-square cursor-pointer overflow-hidden rounded-lg group animate-fade-in bg-stone-50 border border-dashed border-stone-200"
                     onClick={() => {
                         const globalIndex = (page * imagesPerPage) + i;
@@ -96,16 +103,16 @@ export default function Gallery({ images }: GalleryProps) {
                     }}
                   >
                     <Image
-                        src={src}
+                        src={item.thumb}
                         alt={`Galéria kép`}
                         fill
                         sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                         className="object-cover transition-transform duration-500 group-hover:scale-110"
                         onLoad={() => {
-                            setLoadedImages(prev => ({ ...prev, [src]: true }));
+                            setLoadedImages(prev => ({ ...prev, [item.thumb]: true }));
                         }}
                     />
-                    {!loadedImages[src] && (
+                    {!loadedImages[item.thumb] && (
                         <div className="absolute inset-0 flex items-center justify-center bg-stone-50">
                             <div className="flex items-end justify-center gap-1.5 h-6">
                                 <div className="w-1.5 h-6 bg-emerald-600 rounded-full origin-bottom animate-loading-bar-1" />
@@ -119,7 +126,7 @@ export default function Gallery({ images }: GalleryProps) {
                     </div>
                   </div>
               ))}
-              {/* ÚJ: Helykitöltő elemek renderelése */}
+              {/* Helykitöltő elemek renderelése */}
               {placeholdersNeeded > 0 && Array.from({ length: placeholdersNeeded }).map((_, i) => (
                 <div key={`placeholder-${i}`} className="aspect-square rounded-lg bg-stone-50 border border-dashed border-stone-200 pointer-events-none"></div>
               ))}
@@ -143,7 +150,7 @@ export default function Gallery({ images }: GalleryProps) {
         open={open}
         close={() => setOpen(false)}
         index={index}
-        slides={images.map(src => ({ src }))}
+        slides={normalizedImages.map(item => ({ src: item.src }))}
         styles={{ container: { backgroundColor: "rgba(0, 0, 0, .9)" } }}
       />
     </section>
