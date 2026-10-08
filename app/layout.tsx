@@ -143,13 +143,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="hu" suppressHydrationWarning>
-      <head>
+      <body className={inter.className} suppressHydrationWarning>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-      </head>
-      <body className={inter.className} suppressHydrationWarning>
         {children}
       </body>
     </html>

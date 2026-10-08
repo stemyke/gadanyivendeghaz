@@ -16,7 +16,6 @@ export default function Gallery({ images }: GalleryProps) {
   const [index, setIndex] = useState(0);
   const [page, setPage] = useState(0);
   const [columns, setColumns] = useState(4);
-  const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
 
   const normalizedImages: GalleryImageItem[] = useMemo(() => {
     return images.map((img) =>
@@ -75,16 +74,18 @@ export default function Gallery({ images }: GalleryProps) {
             {totalPages > 1 && (
                 <>
                     <button 
+                        type="button"
                         onClick={handlePrevPage}
                         disabled={page === 0}
-                        className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 md:-translate-x-8 z-10 w-12 h-12 flex items-center justify-center bg-white border border-stone-200 rounded-full shadow-lg transition-all ${page === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-emerald-50 hover:text-emerald-700 text-stone-600'}`}
+                        className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 md:-translate-x-8 z-20 w-12 h-12 flex items-center justify-center bg-white border border-stone-200 rounded-full shadow-lg transition-all ${page === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-emerald-50 hover:text-emerald-700 text-stone-600'}`}
                     >
                         <ChevronLeft size={24} />
                     </button>
                     <button 
+                        type="button"
                         onClick={handleNextPage}
                         disabled={page === totalPages - 1}
-                        className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 md:translate-x-8 z-10 w-12 h-12 flex items-center justify-center bg-white border border-stone-200 rounded-full shadow-lg transition-all ${page === totalPages - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-emerald-50 hover:text-emerald-700 text-stone-600'}`}
+                        className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 md:translate-x-8 z-20 w-12 h-12 flex items-center justify-center bg-white border border-stone-200 rounded-full shadow-lg transition-all ${page === totalPages - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-emerald-50 hover:text-emerald-700 text-stone-600'}`}
                     >
                         <ChevronRight size={24} />
                     </button>
@@ -95,37 +96,37 @@ export default function Gallery({ images }: GalleryProps) {
               {displayedImages.map((item, i) => (
                   <div
                     key={item.src}
-                    className="relative aspect-square cursor-pointer overflow-hidden rounded-lg group animate-fade-in bg-stone-50 border border-dashed border-stone-200"
+                    className="relative aspect-square cursor-pointer overflow-hidden rounded-lg group animate-fade-in bg-stone-100 border border-stone-200"
                     onClick={() => {
                         const globalIndex = (page * imagesPerPage) + i;
                         setIndex(globalIndex);
                         setOpen(true);
                     }}
                   >
+                    {/* Betöltési animáció a háttérben - a kép automatikusan rátakar */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-stone-100 pointer-events-none z-0">
+                        <div className="flex items-end justify-center gap-1.5 h-6">
+                            <div className="w-1.5 h-6 bg-emerald-600 rounded-full origin-bottom animate-loading-bar-1" />
+                            <div className="w-1.5 h-6 bg-emerald-600 rounded-full origin-bottom animate-loading-bar-2" />
+                            <div className="w-1.5 h-6 bg-emerald-600 rounded-full origin-bottom animate-loading-bar-3" />
+                        </div>
+                    </div>
+
                     <Image
                         src={item.thumb}
-                        alt={`Galéria kép`}
+                        alt="Galéria kép"
                         fill
                         sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                        className="object-cover transition-transform duration-500 group-hover:scale-110"
-                        onLoad={() => {
-                            setLoadedImages(prev => ({ ...prev, [item.thumb]: true }));
-                        }}
+                        className="object-cover transition-transform duration-500 group-hover:scale-110 relative z-10"
                     />
-                    {!loadedImages[item.thumb] && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-stone-50">
-                            <div className="flex items-end justify-center gap-1.5 h-6">
-                                <div className="w-1.5 h-6 bg-emerald-600 rounded-full origin-bottom animate-loading-bar-1" />
-                                <div className="w-1.5 h-6 bg-emerald-600 rounded-full origin-bottom animate-loading-bar-2" />
-                                <div className="w-1.5 h-6 bg-emerald-600 rounded-full origin-bottom animate-loading-bar-3" />
-                            </div>
-                        </div>
-                    )}
-                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                        <span className="text-white font-medium tracking-wider opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform translate-y-4 group-hover:translate-y-0">Nagyítás</span>
+
+                    {/* Kattintási felirat ráhúzáskor */}
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-20 pointer-events-none">
+                        <span className="text-white font-medium tracking-wider transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">Nagyítás</span>
                     </div>
                   </div>
               ))}
+
               {/* Helykitöltő elemek renderelése */}
               {placeholdersNeeded > 0 && Array.from({ length: placeholdersNeeded }).map((_, i) => (
                 <div key={`placeholder-${i}`} className="aspect-square rounded-lg bg-stone-50 border border-dashed border-stone-200 pointer-events-none"></div>
@@ -136,6 +137,7 @@ export default function Gallery({ images }: GalleryProps) {
                 <div className="mt-8 flex justify-center gap-2">
                     {Array.from({ length: totalPages }).map((_, i) => (
                         <button 
+                            type="button"
                             key={i}
                             onClick={() => setPage(i)}
                             className={`w-2.5 h-2.5 rounded-full transition-all ${i === page ? 'bg-emerald-600 w-8' : 'bg-stone-300 hover:bg-stone-400'}`}
